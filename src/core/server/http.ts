@@ -28,9 +28,15 @@ export class HttpServer {
   }
 
   private async handleRequest(req: ZRequest, res: ZResponse): Promise<void> {
+    const rawUrl = req.url ?? "/";
+    const qIndex = rawUrl.indexOf("?");
+    const pathname = qIndex !== -1 ? rawUrl.substring(0, qIndex) : rawUrl;
+    const search = qIndex !== -1 ? rawUrl.substring(qIndex + 1) : "";
+
     const matched = Route.getRoute(
       req.method as HttpMethod,
-      new URL(req.url ?? "/", `http://${req.headers.host}`),
+      pathname,
+      search
     );
 
     if (!matched) {
@@ -45,7 +51,7 @@ export class HttpServer {
 
     const middlewares = Route.resolveMiddlewares(route);
 
-    await this.callHandler(route.handler, req, res, middlewares);
+    await this.callHandler(route, req, res, middlewares);
   }
 
   private async executeMiddleware(
@@ -77,17 +83,17 @@ export class HttpServer {
   }
 
   private async callHandler(
-    handler: HandlerFunction,
+    route: Routes,
     req: ZRequest,
     res: ZResponse,
     middlewares: Middleware[],
   ): Promise<void> {
     try {
       await this.executeMiddleware(middlewares, req, res, async () => {
-        const args: any[] = await this.getArgs(handler, req, res);
-        const result = Array.isArray(handler)
-          ? await this.callController(handler, args)
-          : await handler(...args);
+        const args: any[] = await this.getArgs(route, req, res);
+        const result = Array.isArray(route.handler)
+          ? await this.callController(route, args)
+          : await route.handler(...args);
 
         if (result !== undefined && !res.writableEnded) {
           this.sendJsonResponse(res, 200, result);
@@ -99,22 +105,11 @@ export class HttpServer {
   }
 
   private async getArgs(
-    handler: HandlerFunction,
+    route: Routes,
     req: ZRequest,
     res: ZResponse,
   ): Promise<any[]> {
-    let metadata;
-    let [ControllerClass, methodName]: any[] = [null, null];
-    if (Array.isArray(handler)) {
-      [ControllerClass, methodName] = handler;
-      const controller = new ControllerClass();
-      metadata = getParameterMetadata(
-        Object.getPrototypeOf(controller),
-        methodName,
-      );
-    } else {
-      metadata = getParameterMetadata(handler, "handler");
-    }
+    const metadata = route.metadata || [];
 
     const args: any[] = [];
     if (metadata.length === 0) {
@@ -160,14 +155,13 @@ export class HttpServer {
     return args;
   }
 
-  private async callController(handler: HandlerFunction, args: any[]) {
-    if (!Array.isArray(handler)) {
+  private async callController(route: Routes, args: any[]) {
+    if (!Array.isArray(route.handler)) {
       throw new Error("Handler is not a controller method");
     }
 
-    const [ControllerClass, methodName] = handler;
-
-    const controllerInstance = new ControllerClass();
+    const [_, methodName] = route.handler;
+    const controllerInstance = route.controllerInstance;
     return controllerInstance[methodName](...args);
   }
 
@@ -249,5 +243,21 @@ export class HttpServer {
     server.on("close", () => {
       this.logger.info("Server closed");
     });
+
+    const shutdownHandler = (signal: string) => {
+      this.logger.info(`Menerima signal ${signal}. Menutup server secara graceful...`);
+      server.close(() => {
+        this.logger.info("Server berhasil ditutup.");
+        process.exit(0);
+      });
+
+      if ('closeIdleConnections' in server) {
+        // @ts-ignore
+        server.closeIdleConnections();
+      }
+    };
+
+    process.on("SIGINT", () => shutdownHandler("SIGINT"));
+    process.on("SIGTERM", () => shutdownHandler("SIGTERM"));
   }
 }

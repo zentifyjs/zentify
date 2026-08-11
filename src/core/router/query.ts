@@ -1,7 +1,8 @@
-export function parseQuery(url: URL): Record<string, string | string[]> {
+export function parseQuery(search: string): Record<string, string | string[]> {
   const query: Record<string, string | string[]> = {};
+  const searchParams = new URLSearchParams(search);
 
-  for (const [key, value] of url.searchParams) {
+  for (const [key, value] of searchParams) {
     const existing = query[key];
 
     if (existing === undefined) {

@@ -1,4 +1,5 @@
 import { getControllerMetadata, getRouteMetadata } from "../decorators";
+import { getParameterMetadata } from "../decorators/metadata";
 import { Middleware } from "../middleware";
 import { normalizePath } from "../utils/route";
 import { matchRoute } from "./matcher";
@@ -34,6 +35,8 @@ export type Routes = {
   path: string;
   handler: HandlerFunction;
   middlewares: Middleware[];
+  metadata?: any[];
+  controllerInstance?: any;
 };
 
 export class Route {
@@ -67,7 +70,8 @@ export class Route {
 
   public static getRoute(
     method: HttpMethod,
-    url: URL,
+    pathname: string,
+    search: string,
   ):
     | {
         route: Routes;
@@ -75,11 +79,11 @@ export class Route {
         query: Record<string, string | string[]>;
       }
     | undefined {
-    const matched = matchRoute(method, url, this.routeTable);
-    const query = parseQuery(url);
+    const matched = matchRoute(method, pathname, this.routeTable);
     if (!matched) {
       return undefined;
     }
+    const query = parseQuery(search);
     return { ...matched, query };
   }
 
@@ -139,19 +143,28 @@ export class Route {
       seen.add(middlewareType);
     }
 
+    let metadata: any[] = [];
+    let controllerInstance: any = null;
+
+    if (Array.isArray(handler)) {
+      const [ControllerClass, methodName] = handler;
+      controllerInstance = new ControllerClass();
+      metadata = getParameterMetadata(
+        Object.getPrototypeOf(controllerInstance),
+        methodName,
+      );
+    } else {
+      metadata = getParameterMetadata(handler, "handler");
+    }
+
     this.routeTable.add({
       method,
       path: routePath,
       handler,
       middlewares: routeMiddlewares,
+      metadata,
+      controllerInstance,
     });
-
-    // this.routes.push({
-    //   method,
-    //   path: routePath,
-    //   handler,
-    //   middlewares: routeMiddlewares,
-    // });
   }
 
   public static get<C extends ControllerClass<any>>(

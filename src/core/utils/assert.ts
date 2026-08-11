@@ -1,20 +1,6 @@
 import { DTOClass } from "../types/dto";
 import { isDtoClass } from "./common";
 
-function assertJsonSerializable(data: unknown): void {
-  try {
-    JSON.stringify(data);
-  } catch (error) {
-    if (error instanceof TypeError && error.message.includes("circular")) {
-      throw new Error(
-        "Response contains a circular structure and cannot be serialized to JSON",
-      );
-    }
-
-    throw error;
-  }
-}
-
 function assertDtoClass(
   dtoClass: unknown,
   target: object,
@@ -36,4 +22,4 @@ function assertDtoClass(
   }
 }
 
-export { assertJsonSerializable, assertDtoClass };
+export { assertDtoClass };

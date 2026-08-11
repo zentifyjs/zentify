@@ -3,18 +3,27 @@ import { HttpException } from "../exception/http";
 import { AppContext } from "../types/app_context";
 import { getBodyParser } from "../constants";
 import { ZRequest, ZResponse } from "../types/message";
-import { assertJsonSerializable } from "../utils";
 
 export function enhanceResponse(res: ServerResponse): ZResponse {
   const response = res as ZResponse;
 
   response.json = (data: unknown) => {
-    assertJsonSerializable(data);
+    let jsonString: string;
+    try {
+      jsonString = JSON.stringify(data);
+    } catch (error) {
+      if (error instanceof TypeError && error.message.includes("circular")) {
+        throw new HttpException({
+          statusCode: 500,
+          message: "Response contains a circular structure and cannot be serialized to JSON",
+        });
+      }
+      throw error;
+    }
+    
     response.body = data;
-
     response.setHeader("Content-Type", "application/json");
-
-    response.end(JSON.stringify(data));
+    response.end(jsonString);
   };
 
   return response;
