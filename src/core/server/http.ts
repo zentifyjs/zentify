@@ -85,7 +85,6 @@ export class HttpServer {
     try {
       await this.executeMiddleware(middlewares, req, res, async () => {
         const args: any[] = await this.getArgs(handler, req, res);
-
         const result = Array.isArray(handler)
           ? await this.callController(handler, args)
           : await handler(...args);
@@ -118,7 +117,10 @@ export class HttpServer {
     }
 
     const args: any[] = [];
-
+    if (metadata.length === 0) {
+      args.push(req, res);
+      return args;
+    }
     for (const param of metadata) {
       switch (param.type) {
         case "req":

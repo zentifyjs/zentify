@@ -1,14 +1,15 @@
 {
-  "name": "zstore",
+  "name": "zify",
   "version": "1.0.0",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "commonjs",
   "scripts": {
-    "dev": "concurrently --raw \"tsc --watch\" \"node --watch dist/index.js\"",
+    "dev": "concurrently --raw \"tsc --watch\" \"node --watch dist/main.js\"",
     "start": "tsx src/index.ts",
     "build": "tsc",
+    "build:cjs": "tsc && node scripts/build-cjs.cjs",
     "typecheck": "tsc --noEmit"
   },
   "exports": {

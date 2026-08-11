@@ -117,6 +117,7 @@ export class Route {
       routePath = routePath.replace(paramRegex, (_, paramName) => {
         return `/:${paramName}`;
       });
+      routePath = normalizePath(routePath);
     }
 
     const routeMiddlewares = [...this.getGroupMiddlewares(), ...middlewares];

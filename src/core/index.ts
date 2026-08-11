@@ -25,7 +25,7 @@ export class Zify {
         `Registered route: [${route.method}] ${route.path} -> ${typeof route.handler === "function" ? "FunctionHandler" : `${route.handler[0].name}.${route.handler[1]}`}`,
       );
     }
-    const httpServer = new HttpServer();
+    const httpServer = new HttpServer(this.context);
     httpServer.registerRoutes(routes);
     this.logger.info("Starting server...");
     httpServer.start();
