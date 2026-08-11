@@ -4,14 +4,22 @@ import { Route } from "./router/route";
 import { HttpServer } from "./server/http";
 import { AppContext } from "./types/app_context";
 import { Logger } from "./utils";
+import { ZifyViewEngine } from "./view";
+
+export { render, type ZifyViewEngine, type ZifyView } from "./view";
 
 export class Zify {
   public context: AppContext = {};
+  public viewEngine?: ZifyViewEngine;
   private logger = new Logger({
     context: "App",
   });
   constructor(config: AppContext = {}) {
     this.context = config;
+  }
+
+  setViewEngine(engine: ZifyViewEngine) {
+    this.viewEngine = engine;
   }
 
   addMiddleware(middleware: Middleware) {
@@ -25,7 +33,7 @@ export class Zify {
         `Registered route: [${route.method}] ${route.path} -> ${typeof route.handler === "function" ? "FunctionHandler" : `${route.handler[0].name}.${route.handler[1]}`}`,
       );
     }
-    const httpServer = new HttpServer(this.context);
+    const httpServer = new HttpServer(this.context, this.viewEngine);
     httpServer.registerRoutes(routes);
     this.logger.info("Starting server...");
     httpServer.start();

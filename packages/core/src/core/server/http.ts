@@ -13,6 +13,7 @@ import { getNetworkAddresses, Logger } from "../utils";
 import { ZRequest, ZResponse } from "../types/message";
 import { getParameterMetadata } from "../decorators/metadata";
 import { DTOClass } from "../types/dto";
+import { ZifyViewEngine, ZifyView } from "../view";
 
 export class HttpServer {
   private routes: Routes[] = [];
@@ -20,8 +21,11 @@ export class HttpServer {
     context: "HttpServer",
   });
   private appContext: AppContext = {};
-  constructor(appContext: AppContext = {}) {
+  private viewEngine?: ZifyViewEngine;
+  
+  constructor(appContext: AppContext = {}, viewEngine?: ZifyViewEngine) {
     this.appContext = appContext;
+    this.viewEngine = viewEngine;
   }
   public registerRoutes(routes: Routes[]): void {
     this.routes = routes;
@@ -96,7 +100,15 @@ export class HttpServer {
           : await route.handler(...args);
 
         if (result !== undefined && !res.writableEnded) {
-          this.sendJsonResponse(res, 200, result);
+          if (typeof result === "object" && result !== null && "__isZifyView" in result && result.__isZifyView) {
+            if (!this.viewEngine) {
+              throw new Error("View Engine is not configured but a view was returned.");
+            }
+            const view = result as ZifyView;
+            await this.viewEngine.render(view.page, view.props, req, res);
+          } else {
+            this.sendJsonResponse(res, 200, result);
+          }
         }
       });
     } catch (error: unknown) {

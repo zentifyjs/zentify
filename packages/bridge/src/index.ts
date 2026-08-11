@@ -1,0 +1,116 @@
+import { ZifyViewEngine, ZRequest, ZResponse } from "zify";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+
+export interface ZifyBridgeOptions {
+  /**
+   * The entry point for the Vite Dev Server.
+   * Typically 'src/main.tsx' or 'src/main.ts'.
+   */
+  entry: string;
+  /**
+   * Determine if we should inject Vite Dev Server scripts or load from manifest.
+   * Default: process.env.NODE_ENV !== 'production'
+   */
+  isDev?: boolean;
+  /**
+   * Port of the Vite dev server (default: 5173)
+   */
+  vitePort?: number;
+  /**
+   * HTML shell to render. 
+   * This should contain `<div id="zify-app" data-page="..."></div>` 
+   * and `<zify-vite-scripts />` where the scripts will be injected.
+   */
+  htmlShell?: string;
+  /**
+   * Path to the Vite manifest file (for production).
+   */
+  manifestPath?: string;
+}
+
+const defaultHtmlShell = `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Zify App</title>
+    <zify-vite-scripts />
+  </head>
+  <body>
+    <div id="zify-app" data-page='{zify-data}'></div>
+  </body>
+</html>
+`;
+
+export class ZifyBridge implements ZifyViewEngine {
+  private options: ZifyBridgeOptions;
+  
+  constructor(options: ZifyBridgeOptions) {
+    this.options = {
+      isDev: process.env.NODE_ENV !== "production",
+      vitePort: 5173,
+      htmlShell: defaultHtmlShell,
+      ...options,
+    };
+  }
+
+  async render(page: string, props: Record<string, any>, req: ZRequest, res: ZResponse): Promise<void> {
+    const isBridgeRequest = req.headers["x-zify-bridge"] === "true";
+
+    if (isBridgeRequest) {
+      // Bridge Client Side Navigation: just send JSON
+      res.setHeader("Content-Type", "application/json");
+      res.json({ component: page, props });
+      return;
+    }
+
+    // First Load: Send HTML Shell
+    let html = this.options.htmlShell || defaultHtmlShell;
+    
+    // Inject scripts
+    let scripts = "";
+    if (this.options.isDev) {
+      const viteUrl = `http://localhost:${this.options.vitePort}`;
+      scripts = `
+        <script type="module" src="${viteUrl}/@vite/client"></script>
+        <script type="module" src="${viteUrl}/${this.options.entry}"></script>
+      `;
+    } else {
+      // In production, we'd read the manifest.json and inject the hashed assets
+      if (this.options.manifestPath) {
+        try {
+          const manifestContent = await fs.readFile(this.options.manifestPath, "utf-8");
+          const manifest = JSON.parse(manifestContent);
+          const entryChunk = manifest[this.options.entry];
+          if (entryChunk && entryChunk.file) {
+            scripts = `<script type="module" src="/${entryChunk.file}"></script>`;
+            if (entryChunk.css) {
+              for (const css of entryChunk.css) {
+                scripts += `\n<link rel="stylesheet" href="/${css}" />`;
+              }
+            }
+          }
+        } catch (error) {
+          console.error("ZifyBridge: Failed to read manifest.json", error);
+        }
+      }
+    }
+
+    html = html.replace("<zify-vite-scripts />", scripts);
+    
+    // Inject initial data payload safely (escape quotes and script tags)
+    const payload = JSON.stringify({ component: page, props })
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+      
+    html = html.replace("'{zify-data}'", `"${payload}"`);
+
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.end(html);
+  }
+}

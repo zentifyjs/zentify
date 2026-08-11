@@ -1,41 +1,8 @@
 {
-  "name": "zify",
-  "version": "1.0.0",
-  "description": "",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "type": "commonjs",
-  "scripts": {
-    "dev": "concurrently --raw \"tsc --watch\" \"node --watch dist/main.js\"",
-    "start": "tsx src/index.ts",
-    "build": "tsc",
-    "build:cjs": "tsc && node scripts/build-cjs.cjs",
-    "typecheck": "tsc --noEmit"
-  },
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "require": "./dist/index.cjs"
-    }
-  },
-  "files": [
-    "dist"
-  ],
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "devDependencies": {
-    "@types/busboy": "^1.5.4",
-    "@types/node": "^26.2.0",
-    "concurrently": "^10.0.4",
-    "tsx": "^4.23.11",
-    "typescript": "^7.0.2"
-  },
-  "dependencies": {
-    "busboy": "^1.6.0",
-    "find-my-way": "^9.7.0",
-    "reflect-metadata": "^0.2.2",
-    "zod": "^4.4.3"
-  }
+  "name": "zify-monorepo",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ]
 }
