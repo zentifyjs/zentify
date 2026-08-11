@@ -27,6 +27,11 @@ export interface ZifyBridgeOptions {
    * Path to the Vite manifest file (for production).
    */
   manifestPath?: string;
+  /**
+   * If using React, inject Vite's React Refresh preamble.
+   * Default: true
+   */
+  reactRefresh?: boolean;
 }
 
 const defaultHtmlShell = `
@@ -52,6 +57,7 @@ export class ZifyBridge implements ZifyViewEngine {
       isDev: process.env.NODE_ENV !== "production",
       vitePort: 5173,
       htmlShell: defaultHtmlShell,
+      reactRefresh: true,
       ...options,
     };
   }
@@ -73,7 +79,20 @@ export class ZifyBridge implements ZifyViewEngine {
     let scripts = "";
     if (this.options.isDev) {
       const viteUrl = `http://localhost:${this.options.vitePort}`;
-      scripts = `
+      
+      if (this.options.reactRefresh) {
+        scripts += `
+          <script type="module">
+            import RefreshRuntime from '${viteUrl}/@react-refresh'
+            RefreshRuntime.injectIntoGlobalHook(window)
+            window.$RefreshReg$ = () => {}
+            window.$RefreshSig$ = () => (type) => type
+            window.__vite_plugin_react_preamble_installed__ = true
+          </script>
+        `;
+      }
+      
+      scripts += `
         <script type="module" src="${viteUrl}/@vite/client"></script>
         <script type="module" src="${viteUrl}/${this.options.entry}"></script>
       `;
