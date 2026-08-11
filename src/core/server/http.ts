@@ -1,11 +1,6 @@
 import { createServer } from "node:http";
 
-import {
-  HandlerFunction,
-  HttpMethod,
-  ListRoutes,
-  Route,
-} from "../router/route";
+import { HandlerFunction, HttpMethod, Routes, Route } from "../router/route";
 
 import { z } from "zod";
 
@@ -20,7 +15,7 @@ import { getParameterMetadata } from "../decorators/metadata";
 import { DTOClass } from "../types/dto";
 
 export class HttpServer {
-  private routes: ListRoutes[] = [];
+  private routes: Routes[] = [];
   private logger = new Logger({
     context: "HttpServer",
   });
@@ -28,7 +23,7 @@ export class HttpServer {
   constructor(appContext: AppContext = {}) {
     this.appContext = appContext;
   }
-  public registerRoutes(routes: ListRoutes[]): void {
+  public registerRoutes(routes: Routes[]): void {
     this.routes = routes;
   }
 
@@ -69,7 +64,6 @@ export class HttpServer {
       index = currentIndex;
 
       if (currentIndex === middlewares.length) {
-        console.log("Executing handler after all middlewares");
         await handler();
         return;
       }
@@ -115,7 +109,6 @@ export class HttpServer {
     if (Array.isArray(handler)) {
       [ControllerClass, methodName] = handler;
       const controller = new ControllerClass();
-      const method = controller[methodName];
       metadata = getParameterMetadata(
         Object.getPrototypeOf(controller),
         methodName,

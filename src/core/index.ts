@@ -19,7 +19,11 @@ export class Zify {
 
   run() {
     const routes = Route.getRoutes();
-    console.log("Registered routes:", routes);
+    for (const route of routes) {
+      this.logger.info(
+        `Registered route: [${route.method}] ${route.path} -> ${typeof route.handler === "function" ? "FunctionHandler" : `${route.handler[0].name}.${route.handler[1]}`}`,
+      );
+    }
     const httpServer = new HttpServer();
     httpServer.registerRoutes(routes);
     this.logger.info("Starting server...");

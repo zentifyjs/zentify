@@ -14,9 +14,7 @@ class LoggerMiddleware implements Middleware {
   async handle(req: ZRequest, res: ZResponse, next: () => Promise<void>) {
     this.logger.info(`Incoming request: ${req.method} ${req.url}`);
     await next();
-    this.logger.info(
-      `Response sent for: ${req.method} ${req.url} ${JSON.stringify(res.body)}`,
-    );
+    this.logger.info(`Response sent for: ${req.method} ${req.url}`);
   }
 }
 

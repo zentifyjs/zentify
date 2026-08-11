@@ -20,6 +20,19 @@ export class UserController {
     return { message: "User found", userId: id, query };
   }
 
+  @Get("/me")
+  async getMyProfile(@Query() query: Record<string, string>) {
+    return { message: "My profile found", query };
+  }
+
+  @Get(":id/profile")
+  async getUserProfile(
+    @Param("id") id: string,
+    @Query() query: Record<string, string>,
+  ) {
+    return { message: "User profile found", userId: id, query };
+  }
+
   @Post()
   async createUser(@Body() body: CreateUserDto) {
     const dto = body.name;

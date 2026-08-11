@@ -3,6 +3,7 @@ import { Middleware } from "../middleware";
 import { normalizePath } from "../utils/route";
 import { matchRoute } from "./matcher";
 import { parseQuery } from "./query";
+import { RouteTable } from "./route_table";
 
 export type ControllerClass<T = any> = new (...args: any[]) => T;
 
@@ -28,7 +29,7 @@ export type HttpMethod =
   | "HEAD"
   | "OPTIONS";
 
-export type ListRoutes = {
+export type Routes = {
   method: HttpMethod;
   path: string;
   handler: HandlerFunction;
@@ -36,13 +37,15 @@ export type ListRoutes = {
 };
 
 export class Route {
-  private static routes: ListRoutes[] = [];
+  private static routes: Routes[] = [];
 
   private static globalMiddleware: Middleware[] = [];
 
   private static prefixStack: string[] = [];
 
   private static groupMiddlewareStack: Middleware[][] = [];
+
+  private static routeTable = new RouteTable();
 
   private static getPrefix(): string {
     return this.prefixStack.join("");
@@ -52,7 +55,7 @@ export class Route {
     return this.groupMiddlewareStack.flat();
   }
 
-  public static resolveMiddlewares(route: ListRoutes): Middleware[] {
+  public static resolveMiddlewares(route: Routes): Middleware[] {
     return [...this.globalMiddleware, ...route.middlewares];
   }
 
@@ -67,12 +70,12 @@ export class Route {
     url: URL,
   ):
     | {
-        route: ListRoutes;
+        route: Routes;
         params: Record<string, string>;
         query: Record<string, string | string[]>;
       }
     | undefined {
-    const matched = matchRoute(method, url, this.routes);
+    const matched = matchRoute(method, url, this.routeTable);
     const query = parseQuery(url);
     if (!matched) {
       return undefined;
@@ -135,12 +138,19 @@ export class Route {
       seen.add(middlewareType);
     }
 
-    this.routes.push({
+    this.routeTable.add({
       method,
       path: routePath,
       handler,
       middlewares: routeMiddlewares,
     });
+
+    // this.routes.push({
+    //   method,
+    //   path: routePath,
+    //   handler,
+    //   middlewares: routeMiddlewares,
+    // });
   }
 
   public static get<C extends ControllerClass<any>>(
@@ -195,7 +205,7 @@ export class Route {
     this.globalMiddleware.push(middleware);
   }
 
-  public static getRoutes(): ListRoutes[] {
-    return this.routes;
+  public static getRoutes(): Routes[] {
+    return this.routeTable.all();
   }
 }
