@@ -1,3 +1,4 @@
+import "reflect-metadata";
 import { Middleware } from "./middleware";
 import { Route } from "./router/route";
 import { HttpServer } from "./server/http";

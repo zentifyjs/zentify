@@ -2,7 +2,8 @@
   "name": "zstore",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "type": "commonjs",
   "scripts": {
     "dev": "concurrently --raw \"tsc --watch\" \"node --watch dist/index.js\"",
@@ -10,6 +11,16 @@
     "build": "tsc",
     "typecheck": "tsc --noEmit"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "keywords": [],
   "author": "",
   "license": "ISC",

@@ -1,15 +1,7 @@
 // core/decorators/route.ts
 
 import { Middleware } from "../middleware";
-
-export type HttpMethod =
-  | "GET"
-  | "POST"
-  | "PUT"
-  | "PATCH"
-  | "DELETE"
-  | "HEAD"
-  | "OPTIONS";
+import { HttpMethod } from "../router";
 
 export interface RouteMetadata {
   method: HttpMethod;
@@ -22,7 +14,7 @@ const routeMetadata = new WeakMap<
   Map<string | symbol, RouteMetadata>
 >();
 
-export function Route(
+function Route(
   method: HttpMethod,
   path: string,
   middlewares: Middleware[] = [],
