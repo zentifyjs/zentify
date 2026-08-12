@@ -3,15 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:backend": "tsc && concurrently --prefix none \"tsc --watch\" \"node --watch dist/app/index.js\"",
-    "dev": "npm run dev:backend",
-    "build:backend": "npx tsc"
+    "dev": "zentify dev",
+    "build": "zentify build",
+    "start": "zentify start"
   },
   "dependencies": {
     "@zentify/core": "latest"
   },
   "devDependencies": {
-    "concurrently": "^10.0.4",
+    "@zentify/cli": "latest",
+    "tsx": "^4.19.2",
     "typescript": "^5.0.0"
   }
 }

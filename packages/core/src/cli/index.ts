@@ -4,6 +4,9 @@ import { makeController } from "./commands/make-controller";
 import { makeService } from "./commands/make-service";
 import { makeModule } from "./commands/make-module";
 import { makeApp } from "./commands/make-app";
+import { devCommand } from "./commands/dev";
+import { buildCommand } from "./commands/build";
+import { startCommand } from "./commands/start";
 
 const program = new Command();
 
@@ -16,5 +19,8 @@ program.addCommand(makeApp);
 program.addCommand(makeController);
 program.addCommand(makeService);
 program.addCommand(makeModule);
+program.addCommand(devCommand);
+program.addCommand(buildCommand);
+program.addCommand(startCommand);
 
 program.parse();

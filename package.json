@@ -7,8 +7,8 @@
   ],
   "scripts": {
     "build:core": "npm run build -w @zentify/core",
-    "build:bridge": "npm run build -w @zentify/bridge",
+    "build:vite": "npm run build -w @zentify/vite",
     "build:react": "npm run build -w @zentify/react",
-    "build:all": "npm run build:core && npm run build:bridge && npm run build:react"
+    "build:all": "npm run build:core && npm run build:react && npm run build:vite"
   }
 }

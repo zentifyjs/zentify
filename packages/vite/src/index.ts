@@ -55,8 +55,10 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
       isDev: options.isDev !== undefined ? options.isDev : process.env.NODE_ENV !== "production",
       htmlShell: defaultHtmlShell,
       reactRefresh: true,
+      manifestPath: "./dist/public/.vite/manifest.json",
       ...options,
     };
+
   }
 
   async onInit(app: Zentify) {
