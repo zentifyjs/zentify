@@ -1,5 +1,5 @@
 {
-  "name": "@zify/react",
+  "name": "@zentify/react",
   "version": "1.0.0",
   "type": "module",
   "main": "dist/index.js",

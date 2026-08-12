@@ -1,0 +1,11 @@
+{
+  "name": "zentify",
+  "version": "1.0.0",
+  "description": "Zentify Command Line Interface",
+  "bin": {
+    "zentify": "./bin/zentify.js"
+  },
+  "dependencies": {
+    "@zentify/core": "*"
+  }
+}

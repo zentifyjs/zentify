@@ -1,4 +1,4 @@
-import { Dependency } from "@zify/core";
+import { Dependency } from "@zentify/core";
 
 @Dependency()
 export class AuthService{

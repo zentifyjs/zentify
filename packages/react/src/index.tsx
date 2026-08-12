@@ -1,6 +1,6 @@
 import React, { useState, useEffect, ReactElement } from "react";
 
-export interface ZifyAppConfig {
+export interface ZentifyAppConfig {
   /**
    * The function that resolves a component given a page name.
    * e.g., (name) => pages[\`./Pages/\${name}.tsx\`]
@@ -21,16 +21,16 @@ interface PageData {
 let currentData: PageData | null = null;
 let subscribers: ((data: PageData) => void)[] = [];
 
-export function createZifyApp({ resolve, setup }: ZifyAppConfig) {
-  const el = document.getElementById("zify-app");
+export function createZentifyApp({ resolve, setup }: ZentifyAppConfig) {
+  const el = document.getElementById("zentify-app");
   if (!el) {
-    console.error("Zify: Could not find element with id 'zify-app'.");
+    console.error("Zentify: Could not find element with id 'zentify-app'.");
     return;
   }
 
   const dataset = el.dataset.page;
   if (!dataset) {
-    console.error("Zify: 'data-page' attribute is missing on the 'zify-app' element.");
+    console.error("Zentify: 'data-page' attribute is missing on the 'zentify-app' element.");
     return;
   }
 
@@ -44,8 +44,8 @@ export function createZifyApp({ resolve, setup }: ZifyAppConfig) {
       subscribers.push(handler);
       
       const onPopState = (event: PopStateEvent) => {
-        if (event.state && event.state.zify) {
-          setPageData(event.state.zify);
+        if (event.state && event.state.zentify) {
+          setPageData(event.state.zentify);
         }
       };
       
@@ -74,7 +74,7 @@ export const navigate = async (url: string) => {
   try {
     const response = await fetch(url, {
       headers: {
-        "X-Zify-Bridge": "true",
+        "X-Zentify-Bridge": "true",
         "Accept": "application/json",
       },
     });
@@ -83,16 +83,16 @@ export const navigate = async (url: string) => {
       const data = await response.json();
       currentData = data;
       // Push state
-      window.history.pushState({ zify: data }, "", url);
+      window.history.pushState({ zentify: data }, "", url);
       // Notify subscribers
       subscribers.forEach((s) => s(data));
     } else {
-      console.error("Zify Navigation Failed:", response.statusText);
+      console.error("Zentify Navigation Failed:", response.statusText);
       // Fallback to normal navigation
       window.location.href = url;
     }
   } catch (error) {
-    console.error("Zify Navigation Error:", error);
+    console.error("Zentify Navigation Error:", error);
     window.location.href = url;
   }
 };

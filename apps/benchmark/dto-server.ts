@@ -1,10 +1,10 @@
-import { Route, Zify, Controller, Post, Module, Dependency, Body } from "@zify/core";
+import { Route, Zentify, Controller, Post, Module, Dependency, Body } from "@zentify/core";
 import * as v from "valibot";
 
 const port = 3004;
 const host = "127.0.0.1";
 
-const app = new Zify({
+const app = new Zentify({
   server: { port, host },
 });
 

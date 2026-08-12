@@ -1,7 +1,7 @@
 // Main app entry point
-import { Zify } from "@zify/core";
+import { Zentify } from "@zentify/core";
 import "./Routes/web.js"
-const app = new Zify({
+const app = new Zentify({
   server: { port: 3003 },
 });
 

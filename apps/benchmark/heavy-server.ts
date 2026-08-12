@@ -1,10 +1,10 @@
-import { Route, Zify, Controller, Get, Module, Param, Query } from "@zify/core";
-import type { Middleware, ZRequest, ZResponse } from "@zify/core";
+import { Route, Zentify, Controller, Get, Module, Param, Query } from "@zentify/core";
+import type { Middleware, ZRequest, ZResponse } from "@zentify/core";
 
 const port = 3005;
 const host = "127.0.0.1";
 
-const app = new Zify({
+const app = new Zentify({
   server: { port, host },
 });
 

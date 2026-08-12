@@ -1,14 +1,14 @@
 // Main app entry point
-import { Route, Zify, render } from "@zify/core";
-import { ZifyBridge } from "@zify/bridge";
+import { Route, Zentify, render } from "@zentify/core";
+import { ZentifyBridge } from "@zentify/bridge";
 import "./Routes/web.js"
-const app = new Zify({
+const app = new Zentify({
   server: { port: 3003 },
 });
 
 // Daftarkan View Engine
 app.setViewEngine(
-  new ZifyBridge({
+  new ZentifyBridge({
     entry: "app/Views/main.tsx",
     manifestPath: "./dist/public/.vite/manifest.json",
     isDev: false,

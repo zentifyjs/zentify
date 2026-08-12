@@ -1,4 +1,4 @@
-import { Dependency, UnauthorizedException } from "@zify/core";
+import { Dependency, UnauthorizedException } from "@zentify/core";
 import { AuthService } from "./AuthService.js";
 
 @Dependency()

@@ -1,11 +1,11 @@
-import { Route, Zify, Controller, Post, Module, Dependency, Body, Query, Param } from "@zify/core";
-import type { Middleware, ZRequest, ZResponse } from "@zify/core";
+import { Route, Zentify, Controller, Post, Module, Dependency, Body, Query, Param } from "@zentify/core";
+import type { Middleware, ZRequest, ZResponse } from "@zentify/core";
 import * as v from "valibot";
 
 const port = 3006;
 const host = "127.0.0.1";
 
-const app = new Zify({ server: { port, host } });
+const app = new Zentify({ server: { port, host } });
 
 // --- 1. Deep Dependency Injection Tree ---
 @Dependency()

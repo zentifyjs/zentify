@@ -8,8 +8,8 @@ import { makeApp } from "./commands/make-app";
 const program = new Command();
 
 program
-  .name("zify")
-  .description("CLI for Zify framework")
+  .name("zentify")
+  .description("CLI for Zentify framework")
   .version("1.0.0");
 
 program.addCommand(makeApp);

@@ -1,11 +1,11 @@
-import { Route, Zify } from "@zify/core";
-import type { ZRequest, ZResponse } from "@zify/core";
+import { Route, Zentify } from "@zentify/core";
+import type { ZRequest, ZResponse } from "@zentify/core";
 
 const port = 3001;
 const host = "127.0.0.1";
 const routeCount = Math.max(0, Number(process.env.ROUTES ?? "10"));
 
-const app = new Zify({
+const app = new Zentify({
   server: { port, host },
 });
 

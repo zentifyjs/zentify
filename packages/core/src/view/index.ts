@@ -1,6 +1,6 @@
 import { ZRequest, ZResponse } from "../types/message";
 
-export interface ZifyViewEngine {
+export interface ZentifyViewEngine {
   render(
     page: string,
     props: Record<string, any>,
@@ -9,15 +9,15 @@ export interface ZifyViewEngine {
   ): string | Promise<string> | void | Promise<void>;
 }
 
-export interface ZifyView {
-  __isZifyView: true;
+export interface ZentifyView {
+  __isZentifyView: true;
   page: string;
   props: Record<string, any>;
 }
 
-export function render(page: string, props: Record<string, any> = {}): ZifyView {
+export function render(page: string, props: Record<string, any> = {}): ZentifyView {
   return {
-    __isZifyView: true,
+    __isZentifyView: true,
     page,
     props,
   };

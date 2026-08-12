@@ -1,5 +1,5 @@
 {
-  "name": "@zify/bridge",
+  "name": "@zentify/bridge",
   "version": "1.0.0",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -7,7 +7,7 @@
     "build": "tsc"
   },
   "dependencies": {
-    "zify": "*"
+    "zentify": "*"
   },
   "devDependencies": {
     "@types/node": "^26.2.0",

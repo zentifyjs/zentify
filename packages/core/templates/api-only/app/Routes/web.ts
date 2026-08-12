@@ -1,4 +1,4 @@
-import { Route } from "@zify/core";
+import { Route } from "@zentify/core";
 import { HomeModule } from "../Modules/HomeModule.js";
 
 // Web routes

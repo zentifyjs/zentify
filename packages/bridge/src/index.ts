@@ -1,8 +1,8 @@
-import { ZifyViewEngine, ZRequest, ZResponse } from "@zify/core";
+import { ZentifyViewEngine, ZRequest, ZResponse } from "@zentify/core";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 
-export interface ZifyBridgeOptions {
+export interface ZentifyBridgeOptions {
   /**
    * The entry point for the Vite Dev Server.
    * Typically 'src/main.tsx' or 'src/main.ts'.
@@ -19,8 +19,8 @@ export interface ZifyBridgeOptions {
   vitePort?: number;
   /**
    * HTML shell to render. 
-   * This should contain `<div id="zify-app" data-page="..."></div>` 
-   * and `<zify-vite-scripts />` where the scripts will be injected.
+   * This should contain `<div id="zentify-app" data-page="..."></div>` 
+   * and `<zentify-vite-scripts />` where the scripts will be injected.
    */
   htmlShell?: string;
   /**
@@ -40,19 +40,19 @@ const defaultHtmlShell = `
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Zify App</title>
-    <zify-vite-scripts />
+    <title>Zentify App</title>
+    <zentify-vite-scripts />
   </head>
   <body>
-    <div id="zify-app" data-page='{zify-data}'></div>
+    <div id="zentify-app" data-page='{zentify-data}'></div>
   </body>
 </html>
 `;
 
-export class ZifyBridge implements ZifyViewEngine {
-  private options: ZifyBridgeOptions;
+export class ZentifyBridge implements ZentifyViewEngine {
+  private options: ZentifyBridgeOptions;
   
-  constructor(options: ZifyBridgeOptions) {
+  constructor(options: ZentifyBridgeOptions) {
     console.log(options)
     this.options = {
       isDev: options.isDev ||process.env.NODE_ENV !== "production",
@@ -65,7 +65,7 @@ export class ZifyBridge implements ZifyViewEngine {
 
   async render(page: string, props: Record<string, any>, req: ZRequest, res: ZResponse): Promise<void> {
     try {
-      const isBridgeRequest = req.headers["x-zify-bridge"] === "true";
+      const isBridgeRequest = req.headers["x-zentify-bridge"] === "true";
 
       if (isBridgeRequest) {
         // Bridge Client Side Navigation: just send JSON
@@ -114,12 +114,12 @@ export class ZifyBridge implements ZifyViewEngine {
               }
             }
           } catch (error) {
-            console.error("ZifyBridge: Failed to read manifest.json", error);
+            console.error("ZentifyBridge: Failed to read manifest.json", error);
           }
         }
       }
 
-      html = html.replace("<zify-vite-scripts />", scripts);
+      html = html.replace("<zentify-vite-scripts />", scripts);
       
       // Inject initial data payload safely (escape quotes and script tags)
       const payload = JSON.stringify({ component: page, props })
@@ -129,7 +129,7 @@ export class ZifyBridge implements ZifyViewEngine {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
         
-      html = html.replace("'{zify-data}'", `"${payload}"`);
+      html = html.replace("'{zentify-data}'", `"${payload}"`);
 
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.end(html);

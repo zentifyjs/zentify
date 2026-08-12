@@ -4,13 +4,13 @@ import { Route } from "./router/route";
 import { HttpServer } from "./server/http";
 import { AppContext } from "./types/app_context";
 import { Logger } from "./utils";
-import { ZifyViewEngine } from "./view";
+import { ZentifyViewEngine } from "./view";
 
 import serveStatic from "serve-static";
 
-export class Zify {
+export class Zentify {
   public context: AppContext = {};
-  public viewEngine?: ZifyViewEngine;
+  public viewEngine?: ZentifyViewEngine;
   private staticHandler?: ReturnType<typeof serveStatic>;
   private logger = new Logger({
     context: "App",
@@ -19,7 +19,7 @@ export class Zify {
     this.context = config;
   }
 
-  setViewEngine(engine: ZifyViewEngine) {
+  setViewEngine(engine: ZentifyViewEngine) {
     this.viewEngine = engine;
   }
 

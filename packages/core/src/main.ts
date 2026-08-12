@@ -1,9 +1,9 @@
 import { Controller, Get, Module, Dependency, Req } from "./decorators";
 import { Route } from "./router/route";
 import { Middleware, ZRequest, ZResponse } from "./types";
-import { Zify } from "./zify";
+import { Zentify } from "./zentify";
 
-const app = new Zify({
+const app = new Zentify({
     server: {
         port: 3002
     }

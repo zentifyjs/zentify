@@ -1,4 +1,4 @@
-import { Module } from "@zify/core";
+import { Module } from "@zentify/core";
 
 @Module({
   controllers: [],

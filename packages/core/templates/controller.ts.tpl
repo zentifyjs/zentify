@@ -1,4 +1,4 @@
-import { Controller, Get } from "@zify/core";
+import { Controller, Get } from "@zentify/core";
 
 @Controller("{{path}}")
 export class {{name}} {

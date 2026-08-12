@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, render } from "@zify/core";
+import { Body, Controller, Get, Post, render } from "@zentify/core";
 import { HomeService } from "../Services/HomeService.js";
 import { HomeDTO } from "./dto/HomeDTO.js";
 
@@ -18,7 +18,7 @@ export class HomeController{
     
     @Get("/")
     async index(){
-        return render("Index", { title: "Zify + React + Vite 🚀", user: "Raja" });
+        return render("Index", { title: "Zentify + React + Vite 🚀", user: "Raja" });
     }
 
     @Get("/about")

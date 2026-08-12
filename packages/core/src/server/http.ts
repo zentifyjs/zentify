@@ -12,7 +12,7 @@ import { getNetworkAddresses, Logger } from "../utils";
 import { ZRequest, ZResponse } from "../types/message";
 import { getParameterMetadata } from "../decorators/metadata";
 import { DTOClass } from "../types/dto";
-import { ZifyViewEngine, ZifyView } from "../view";
+import { ZentifyViewEngine, ZentifyView } from "../view";
 import { HttpMethod, Routes } from "../types";
 
 export class HttpServer {
@@ -21,10 +21,10 @@ export class HttpServer {
     context: "HttpServer",
   });
   private appContext: AppContext = {};
-  private viewEngine?: ZifyViewEngine;
+  private viewEngine?: ZentifyViewEngine;
   private staticHandler?: any;
   
-  constructor(appContext: AppContext = {}, viewEngine?: ZifyViewEngine) {
+  constructor(appContext: AppContext = {}, viewEngine?: ZentifyViewEngine) {
     this.appContext = appContext;
     this.viewEngine = viewEngine;
   }
@@ -110,11 +110,11 @@ export class HttpServer {
           ? await this.callController(route, args)
           : await route.handler(...args);
         if (result !== undefined && !res.writableEnded) {
-          if (typeof result === "object" && result !== null && "__isZifyView" in result && result.__isZifyView) {
+          if (typeof result === "object" && result !== null && "__isZentifyView" in result && result.__isZentifyView) {
             if (!this.viewEngine) {
               throw new Error("View Engine is not configured but a view was returned.");
             }
-            const view = result as ZifyView;
+            const view = result as ZentifyView;
             await this.viewEngine.render(view.page, view.props, req, res);
           } else {
             this.sendJsonResponse(res, 200, result);

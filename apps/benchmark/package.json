@@ -6,7 +6,7 @@
     "start": "tsc && node dist/runner.js"
   },
   "dependencies": {
-    "@zify/core": "*",
+    "@zentify/core": "*",
     "valibot": "^0.42.1"
   },
   "devDependencies": {

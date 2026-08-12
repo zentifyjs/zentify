@@ -1,14 +1,14 @@
 {
-  "name": "zify-monorepo",
+  "name": "zentify-monorepo",
   "private": true,
   "workspaces": [
     "packages/*",
     "apps/*"
   ],
   "scripts": {
-    "build:core": "npm run build -w @zify/core",
-    "build:bridge": "npm run build -w @zify/bridge",
-    "build:react": "npm run build -w @zify/react",
+    "build:core": "npm run build -w @zentify/core",
+    "build:bridge": "npm run build -w @zentify/bridge",
+    "build:react": "npm run build -w @zentify/react",
     "build:all": "npm run build:core && npm run build:bridge && npm run build:react"
   }
 }

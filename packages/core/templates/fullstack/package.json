@@ -10,9 +10,9 @@
     "build:backend": "npx tsc"
   },
   "dependencies": {
-    "@zify/bridge": "git+https://github.com/Azzarnuji/zify.git",
-    "@zify/core": "git+https://github.com/Azzarnuji/zify.git",
-    "@zify/react": "git+https://github.com/Azzarnuji/zify.git",
+    "@zentify/bridge": "git+https://github.com/Azzarnuji/zify.git",
+    "@zentify/core": "git+https://github.com/Azzarnuji/zify.git",
+    "@zentify/react": "git+https://github.com/Azzarnuji/zify.git",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

@@ -8,7 +8,7 @@
     "build:backend": "npx tsc"
   },
   "dependencies": {
-    "@zify/core": "git+https://github.com/Azzarnuji/zify.git"
+    "@zentify/core": "git+https://github.com/Azzarnuji/zify.git"
   },
   "devDependencies": {
     "concurrently": "^10.0.4",

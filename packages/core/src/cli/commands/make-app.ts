@@ -5,7 +5,7 @@ import pc from "picocolors";
 import { select } from "@inquirer/prompts";
 
 export const makeApp = new Command("new")
-  .description("Create a new Zify application")
+  .description("Create a new Zentify application")
   .argument("<name>", "Name of the application")
   .action(async (name: string) => {
     try {
@@ -15,12 +15,12 @@ export const makeApp = new Command("new")
           {
             name: "API Only",
             value: "api-only",
-            description: "A lightweight Zify application for REST APIs",
+            description: "A lightweight Zentify application for REST APIs",
           },
           {
             name: "Fullstack (React)",
             value: "fullstack",
-            description: "Zify backend with React + Vite frontend",
+            description: "Zentify backend with React + Vite frontend",
           },
         ],
       });
@@ -33,7 +33,7 @@ export const makeApp = new Command("new")
         await fs.access(sourceDir);
       } catch {
         console.error(pc.red(`Template ${type} not found at ${sourceDir}`));
-        console.log(pc.yellow("Please ensure the templates directory is properly set up in @zify/core."));
+        console.log(pc.yellow("Please ensure the templates directory is properly set up in @zentify/core."));
         return;
       }
 
@@ -49,7 +49,7 @@ export const makeApp = new Command("new")
         // Ignore if package.json doesn't exist
       }
 
-      console.log(pc.green(`\n✔ Zify application '${name}' created successfully!`));
+      console.log(pc.green(`\n✔ Zentify application '${name}' created successfully!`));
       console.log(pc.cyan(`\nNext steps:`));
       console.log(`  cd ${name}`);
       console.log(`  npm install`);
