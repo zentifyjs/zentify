@@ -1,6 +1,6 @@
 {
   "name": "@zentify/core",
-  "version": "1.0.6",
+  "version": "1.0.6-rc-1",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
