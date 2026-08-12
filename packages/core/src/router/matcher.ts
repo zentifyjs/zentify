@@ -14,10 +14,16 @@ export function matchRoute(
   return routesTable.find(method, pathname);
 }
 
+const regexCache = new Map<string, RegExp>();
+
 export function matchMiddlewarePath(routePath: string, configPath: string): boolean {
   if (configPath.includes('*')) {
-    const regexPath = configPath.replace(/\*/g, '.*');
-    const regex = new RegExp(`^${regexPath}$`);
+    let regex = regexCache.get(configPath);
+    if (!regex) {
+      const regexPath = configPath.replace(/\*/g, '.*');
+      regex = new RegExp(`^${regexPath}$`);
+      regexCache.set(configPath, regex);
+    }
     return regex.test(routePath);
   }
   return routePath === configPath;

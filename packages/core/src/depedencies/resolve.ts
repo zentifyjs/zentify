@@ -47,10 +47,12 @@ export function buildDependencyGraph(
 
 export const instanceCache = new Map<Function, any>();
 
-export function construct<T>(target: any, providers: Function[] = []): T {
+export function construct<T>(target: any, providers: Function[] | Set<Function> = []): T {
     if (instanceCache.has(target)) {
         return instanceCache.get(target);
     }
+
+    const providerSet = providers instanceof Set ? providers : new Set(providers);
 
     const deps = getReflectParamsType(target);
     const resolvedDeps = deps.map(dep => {
@@ -58,11 +60,11 @@ export function construct<T>(target: any, providers: Function[] = []): T {
             throw new Error(`Cannot resolve dependency of ${target.name}`);
         }
 
-        if (!providers.includes(dep)) {
+        if (!providerSet.has(dep)) {
             throw new Error(`Dependency ${dep.name} of ${target.name} is not provided in the Module`);
         }
 
-        return construct(dep, providers);
+        return construct(dep, providerSet);
     });
 
     const instance = new target(...resolvedDeps);
