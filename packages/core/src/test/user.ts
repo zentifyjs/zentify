@@ -2,10 +2,10 @@ import { Body, Controller, Get, Param, Post, Query } from "../decorators";
 import { NotFoundException } from "../exception/http";
 import { DTOClass } from "../types/dto";
 import { ZRequest, ZResponse } from "../types/message";
-import { z } from "zod";
+import * as v from "valibot";
 class CreateUserDto {
-  static schema = z.object({
-    name: z.string().min(1, "Name is required"),
+  static schema = v.object({
+    name: v.pipe(v.string(), v.minLength(1, "Name is required")),
   });
   name!: string;
 }

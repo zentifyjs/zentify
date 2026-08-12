@@ -10,7 +10,6 @@ export function isDtoClass(value: unknown): value is DTOClass {
   return (
     schema !== undefined &&
     typeof schema === "object" &&
-    schema !== null &&
-    typeof schema.safeParse === "function"
+    schema !== null
   );
 }

@@ -1,6 +1,6 @@
-import z from "zod";
+import { GenericSchema } from "valibot";
 
 export interface DTOClass {
-  new (): any;
-  schema: z.ZodType;
+  new (...args: any[]): any;
+  schema: GenericSchema;
 }

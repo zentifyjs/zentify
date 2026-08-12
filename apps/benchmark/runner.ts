@@ -1,68 +1,92 @@
+import fs from "fs";
 import autocannon from "autocannon";
 import { spawn } from "child_process";
 import path from "path";
 
 const TESTS = [
-  { name: "Raw Router", file: "raw-server.ts", port: 3001, url: "http://127.0.0.1:3001/raw" },
-  { name: "DI Controller", file: "di-server.ts", port: 3002, url: "http://127.0.0.1:3002/di" },
-  { name: "Module Middleware", file: "middleware-server.ts", port: 3003, url: "http://127.0.0.1:3003/mw" },
+  { name: "Raw Router", file: "raw-server.ts", port: 3001, url: "http://127.0.0.1:3001/raw", method: "GET" },
+  { name: "DI Controller", file: "di-server.ts", port: 3002, url: "http://127.0.0.1:3002/di", method: "GET" },
+  { name: "Module Middleware", file: "middleware-server.ts", port: 3003, url: "http://127.0.0.1:3003/mw", method: "GET" },
+  { 
+    name: "Heavy DTO Validation", 
+    file: "dto-server.ts", 
+    port: 3004, 
+    url: "http://127.0.0.1:3004/users", 
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      username: "rajagadai",
+      email: "raja@gadai.com",
+      age: 28,
+      address: {
+        street: "Jl. Sudirman No 10",
+        city: "Jakarta",
+        country: "Indonesia"
+      },
+      tags: ["vip", "premium", "loyal"]
+    })
+  },
+  { 
+    name: "Heavy Routing & Serialization", 
+    file: "heavy-server.ts", 
+    port: 3005, 
+    url: "http://127.0.0.1:3005/users/u123/posts/p456/comments/c789?sort=desc&filter=active", 
+    method: "GET"
+  },
+  {
+    name: "Extreme Workload (Deep DI, 5 MW, Valibot)",
+    file: "extreme-server.ts",
+    port: 3006,
+    url: "http://127.0.0.1:3006/extreme/tenant-999/sync?dryRun=true&verbose=1",
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      batchId: "123e4567-e89b-12d3-a456-426614174000",
+      timestamp: new Date().toISOString(),
+      items: Array.from({ length: 10 }).map((_, i) => ({
+          productId: `prod-${i}`,
+          quantity: 5,
+          metadata: { source: "benchmark", priority: "high" }
+      }))
+    })
+  }
 ];
 
-async function runBenchmark(test: typeof TESTS[0]) {
-  console.log(`\n🚀 Starting server for ${test.name}...`);
-  // Using node with strip-types for better performance and no tsx overhead if possible, 
-  // but tsx is safer for standard TS execution. We will use tsx.
-  const server = spawn("node", [test.file.replace(".ts", ".js")], { 
-      cwd: __dirname,
-      shell: true // Required on Windows
-  });
+// import fs from "fs"; // (Already imported at top)
 
-  return new Promise((resolve, reject) => {
-    let output = "";
-    server.stdout.on("data", (data) => {
-        output += data.toString();
-    });
-    server.stderr.on("data", (data) => {
-        console.error(`Error from ${test.name}:`, data.toString());
-    });
+console.log("========================================================");
+console.log("🚀 ZIFY MANUAL BENCHMARK & CPU PROFILING INSTRUCTIONS 🚀");
+console.log("========================================================");
+console.log("To run these benchmarks manually with CPU profiling on Windows, open TWO terminals.\n");
 
-    // Wait 3 seconds for server to boot
-    setTimeout(() => {
-      console.log(`🔥 Running autocannon against ${test.url}...`);
-      
-      autocannon({
-        url: test.url,
-        connections: 100,
-        pipelining: 10,
-        duration: 5,
-      }, (err, result) => {
-          server.kill();
-          if (err) {
-              console.error(err);
-              reject(err);
-              return;
-          }
-          resolve({
-            Name: test.name,
-            "Req/Sec": result.requests.average,
-            "Latency (ms)": result.latency.average,
-          });
-      });
-    }, 3000); 
-  });
+for (const test of TESTS) {
+    const safeName = test.name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const profileName = `${safeName}.cpuprofile`;
+    const serverScript = `dist/${test.file.replace(".ts", ".js")}`;
+    
+    console.log(`\n--- [ ${test.name} ] ---`);
+    console.log(`TERMINAL 1 (Start Server):`);
+    console.log(`  node --cpu-prof --cpu-prof-name ${profileName} ${serverScript}`);
+    
+    console.log(`\nTERMINAL 2 (Run Autocannon):`);
+    
+    let autocannonCmd = `npx autocannon -c 100 -p 10 -d 5 -m ${test.method}`;
+    if (test.headers) {
+        for (const [key, val] of Object.entries(test.headers)) {
+            autocannonCmd += ` -H "${key}=${val}"`;
+        }
+    }
+    
+    if (test.body) {
+        const bodyFilename = `${safeName}_body.json`;
+        fs.writeFileSync(bodyFilename, test.body);
+        autocannonCmd += ` -i ${bodyFilename}`;
+    }
+    
+    // Gunakan petik ganda untuk URL untuk menghindari masalah karakter & di CMD Windows
+    autocannonCmd += ` "${test.url}"`;
+    
+    console.log(`  ${autocannonCmd}`);
+    console.log(`\n> After Autocannon finishes, press Ctrl+C in TERMINAL 1 to save the .cpuprofile file.`);
 }
-
-async function runAll() {
-  const results = [];
-  for (const test of TESTS) {
-    const res = await runBenchmark(test);
-    results.push(res);
-  }
-
-  console.log("\n================ ZIFY BENCHMARK RESULTS ================");
-  console.table(results);
-  console.log("========================================================");
-  process.exit(0);
-}
-
-runAll();
+console.log("\n========================================================");

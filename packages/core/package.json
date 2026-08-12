@@ -36,6 +36,6 @@
     "busboy": "^1.6.0",
     "find-my-way": "^9.7.0",
     "reflect-metadata": "^0.2.2",
-    "zod": "^4.4.3"
+    "valibot": "^0.42.1"
   }
 }

@@ -1,7 +1,7 @@
 import { createServer } from "node:http";
 
 import { Route } from "../router/route";
-import { z } from "zod";
+import { safeParse } from "valibot";
 
 import { enhanceRequest, enhanceResponse } from "./message";
 
@@ -140,15 +140,15 @@ export class HttpServer {
 
         case "body":
           const dto: DTOClass = param.additionalData?.dtoClass;
-          const result = dto.schema.safeParse(req.body);
+          const result = safeParse(dto.schema, req.body);
           if (result.success === false) {
             throw new HttpException({
               message: "Invalid request body",
               statusCode: 422,
-              details: z.treeifyError(result.error),
+              details: result.issues,
             });
           }
-          args[param.index] = result.data;
+          args[param.index] = result.output;
           break;
 
         case "param":

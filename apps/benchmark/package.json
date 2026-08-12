@@ -5,6 +5,10 @@
   "scripts": {
     "start": "tsc && node dist/runner.js"
   },
+  "dependencies": {
+    "@zify/core": "*",
+    "valibot": "^0.42.1"
+  },
   "devDependencies": {
     "@types/autocannon": "^7.12.7",
     "autocannon": "^7.15.0",
