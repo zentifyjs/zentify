@@ -1,0 +1,17 @@
+{
+  "name": "@zentify/vite",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@vitejs/plugin-react": "^6.0.5",
+    "vite": "^8.2.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5"
+  }
+}
