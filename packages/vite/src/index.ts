@@ -1,8 +1,8 @@
 import { ZentifyViewEngine, ZentifyAdapter, Zentify, ZRequest, ZResponse } from "@zentify/core";
 import * as fs from "node:fs/promises";
-import * as path from "node:path";
+import { createServer, ViteDevServer } from "vite";
 
-export interface ZentifyBridgeOptions {
+export interface ZentifyViteOptions {
   /**
    * The entry point for the Vite Dev Server.
    * Typically 'src/main.tsx' or 'src/main.ts'.
@@ -13,10 +13,6 @@ export interface ZentifyBridgeOptions {
    * Default: process.env.NODE_ENV !== 'production'
    */
   isDev?: boolean;
-  /**
-   * Port of the Vite dev server (default: 5173)
-   */
-  vitePort?: number;
   /**
    * HTML shell to render. 
    * This should contain `<div id="zentify-app" data-page="..."></div>` 
@@ -49,15 +45,14 @@ const defaultHtmlShell = `
 </html>
 `;
 
-export class ZentifyBridge implements ZentifyAdapter, ZentifyViewEngine {
-  name = "ZentifyBridge";
-  private options: ZentifyBridgeOptions;
-  private viteDevServer?: any;
+export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
+  name = "ZentifyViteAdapter";
+  private options: ZentifyViteOptions;
+  private viteDevServer?: ViteDevServer;
   
-  constructor(options: ZentifyBridgeOptions) {
+  constructor(options: ZentifyViteOptions) {
     this.options = {
       isDev: options.isDev !== undefined ? options.isDev : process.env.NODE_ENV !== "production",
-      vitePort: 5173,
       htmlShell: defaultHtmlShell,
       reactRefresh: true,
       ...options,
@@ -67,14 +62,13 @@ export class ZentifyBridge implements ZentifyAdapter, ZentifyViewEngine {
   async onInit(app: Zentify) {
     if (this.options.isDev) {
       try {
-        const { createServer } = await import("vite");
         this.viteDevServer = await createServer({
           server: { middlewareMode: true },
           appType: 'custom',
         });
-        console.log("[ZentifyBridge] Vite dev server initialized in middleware mode.");
+        console.log("[ZentifyViteAdapter] Vite dev server initialized in middleware mode.");
       } catch (error) {
-        console.error("[ZentifyBridge] Failed to initialize Vite in middleware mode. Is 'vite' installed?", error);
+        console.error("[ZentifyViteAdapter] Failed to initialize Vite in middleware mode.", error);
       }
     }
   }
@@ -136,12 +130,17 @@ export class ZentifyBridge implements ZentifyAdapter, ZentifyViewEngine {
               }
             }
           } catch (error) {
-            console.error("ZentifyBridge: Failed to read manifest.json", error);
+            console.error("[ZentifyViteAdapter] Failed to read manifest.json", error);
           }
         }
       }
 
       html = html.replace("<zentify-vite-scripts />", scripts);
+      
+      // Apply Vite HTML transformations if in dev mode
+      if (this.viteDevServer) {
+        html = await this.viteDevServer.transformIndexHtml(req.url || '/', html);
+      }
       
       // Inject initial data payload safely (escape quotes and script tags)
       const payload = JSON.stringify({ component: page, props })
@@ -156,7 +155,7 @@ export class ZentifyBridge implements ZentifyAdapter, ZentifyViewEngine {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.end(html);
     } catch (error) {
-      console.log(error)
+      console.error("[ZentifyViteAdapter] Render Error:", error);
     }
   }
 }

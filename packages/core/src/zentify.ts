@@ -5,12 +5,13 @@ import { HttpServer } from "./server/http";
 import { AppContext } from "./types/app_context";
 import { Logger } from "./utils";
 import { ZentifyViewEngine } from "./view";
+import { ZentifyAdapter } from "./types/adapter";
 
 import serveStatic from "serve-static";
 
 export class Zentify {
   public context: AppContext = {};
-  public viewEngine?: ZentifyViewEngine;
+  private adapters: ZentifyAdapter[] = [];
   private staticHandler?: ReturnType<typeof serveStatic>;
   private logger = new Logger({
     context: "App",
@@ -19,8 +20,8 @@ export class Zentify {
     this.context = config;
   }
 
-  setViewEngine(engine: ZentifyViewEngine) {
-    this.viewEngine = engine;
+  addAdapter(adapter: ZentifyAdapter) {
+    this.adapters.push(adapter);
   }
 
   useStatic(path: string, options?: serveStatic.ServeStaticOptions) {
@@ -31,14 +32,20 @@ export class Zentify {
     Route.use(middleware);
   }
 
-  run() {
+  async run() {
+    for (const adapter of this.adapters) {
+      if (adapter.onInit) {
+        await adapter.onInit(this);
+      }
+    }
+
     const routes = Route.getRoutes();
     for (const route of routes) {
       this.logger.info(
         `Registered route: [${route.method}] ${route.path} -> ${typeof route.handler === "function" ? "FunctionHandler" : `${route.handler[0].name}.${route.handler[1]}`}`,
       );
     }
-    const httpServer = new HttpServer(this.context, this.viewEngine);
+    const httpServer = new HttpServer(this.context, this.adapters);
     if (this.staticHandler) {
       httpServer.setStaticHandler(this.staticHandler);
     }

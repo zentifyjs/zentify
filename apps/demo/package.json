@@ -3,14 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:backend": "concurrently --prefix none \"tsc --watch\" \"node --watch dist/app/index.js\"",
+    "dev:backend": "tsc && concurrently --prefix none \"tsc --watch\" \"node --watch-path=./dist dist/app/index.js\"",
     "dev:frontend": "vite",
     "dev": "npm run dev:backend",
     "build:frontend": "vite build",
     "build:backend": "npx tsc"
   },
   "dependencies": {
-    "@zentify/bridge": "*",
+    "@zentify/vite": "*",
     "@zentify/core": "*",
     "@zentify/react": "*",
     "react": "^18.3.1",

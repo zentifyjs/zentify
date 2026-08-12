@@ -14,6 +14,7 @@ import { getParameterMetadata } from "../decorators/metadata";
 import { DTOClass } from "../types/dto";
 import { ZentifyViewEngine, ZentifyView } from "../view";
 import { HttpMethod, Routes } from "../types";
+import { ZentifyAdapter } from "../types/adapter";
 
 export class HttpServer {
   private routes: Routes[] = [];
@@ -21,12 +22,12 @@ export class HttpServer {
     context: "HttpServer",
   });
   private appContext: AppContext = {};
-  private viewEngine?: ZentifyViewEngine;
+  private adapters: ZentifyAdapter[] = [];
   private staticHandler?: any;
   
-  constructor(appContext: AppContext = {}, viewEngine?: ZentifyViewEngine) {
+  constructor(appContext: AppContext = {}, adapters: ZentifyAdapter[] = []) {
     this.appContext = appContext;
-    this.viewEngine = viewEngine;
+    this.adapters = adapters;
   }
   public registerRoutes(routes: Routes[]): void {
     this.routes = routes;
@@ -111,11 +112,20 @@ export class HttpServer {
           : await route.handler(...args);
         if (result !== undefined && !res.writableEnded) {
           if (typeof result === "object" && result !== null && "__isZentifyView" in result && result.__isZentifyView) {
-            if (!this.viewEngine) {
+            // Retrieve view engine dynamically from adapters
+            let viewEngine: ZentifyViewEngine | undefined;
+            for (const adapter of this.adapters) {
+              if (adapter.getViewEngine) {
+                viewEngine = adapter.getViewEngine();
+                if (viewEngine) break;
+              }
+            }
+
+            if (!viewEngine) {
               throw new Error("View Engine is not configured but a view was returned.");
             }
             const view = result as ZentifyView;
-            await this.viewEngine.render(view.page, view.props, req, res);
+            await viewEngine.render(view.page, view.props, req, res);
           } else {
             this.sendJsonResponse(res, 200, result);
           }
@@ -233,6 +243,18 @@ export class HttpServer {
         const request = await enhanceRequest(req, this.appContext);
 
         const response = enhanceResponse(res);
+
+        for (const adapter of this.adapters) {
+          const globalMw = adapter.getGlobalMiddleware?.();
+          if (globalMw) {
+            const proceed = await new Promise<boolean>((resolve) => {
+              res.once('finish', () => resolve(false));
+              res.once('close', () => resolve(false));
+              globalMw(req, res, () => resolve(true));
+            });
+            if (!proceed) return;
+          }
+        }
 
         await this.handleRequest(request, response);
       } catch (error: unknown) {
