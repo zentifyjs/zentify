@@ -1,7 +1,6 @@
 // core/decorators/route.ts
 
-import { Middleware } from "../middleware";
-import { HttpMethod } from "../router";
+import { HttpMethod, Middleware } from "../types";
 
 export interface RouteMetadata {
   method: HttpMethod;

@@ -1,4 +1,4 @@
-import { ZRequest, ZResponse } from "./types/message";
+import { ZRequest, ZResponse } from "./message";
 
 export interface Middleware {
   handle(

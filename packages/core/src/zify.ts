@@ -1,12 +1,10 @@
 import "reflect-metadata";
-import { Middleware } from "./middleware";
+import { Middleware } from "./types/middleware";
 import { Route } from "./router/route";
 import { HttpServer } from "./server/http";
 import { AppContext } from "./types/app_context";
 import { Logger } from "./utils";
 import { ZifyViewEngine } from "./view";
-
-export { render, type ZifyViewEngine, type ZifyView } from "./view";
 
 export class Zify {
   public context: AppContext = {};

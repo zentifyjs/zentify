@@ -8,7 +8,7 @@
     "dev": "npm run dev:backend"
   },
   "dependencies": {
-    "zify": "*",
+    "@zify/core": "*",
     "@zify/bridge": "*",
     "@zify/react": "*",
     "react": "^18.3.1",

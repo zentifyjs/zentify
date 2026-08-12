@@ -1,4 +1,4 @@
-import { Controller, Get, render } from "zify";
+import { Controller, Get, render } from "@zify/core";
 
 @Controller({path:"/"})
 export class HomeController{

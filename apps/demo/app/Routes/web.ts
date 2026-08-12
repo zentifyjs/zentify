@@ -1,5 +1,5 @@
-import { Route } from "zify";
-import { HomeController } from "../Controllers/Home";
+import { Route } from "@zify/core";
+import { HomeModule } from "../Modules/HomeModule";
 
 // Web routes
-Route.controller(HomeController)
+Route.module(HomeModule)

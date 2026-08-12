@@ -1,4 +1,4 @@
-import type { Routes, HttpMethod } from "./route";
+import { HttpMethod, Routes } from "../types";
 import { RouteTable } from "./route_table";
 
 export type RouteMatch = {

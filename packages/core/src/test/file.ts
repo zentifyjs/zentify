@@ -1,9 +1,9 @@
-import { Req } from "../core/decorators/req";
-import { Res } from "../core/decorators/res";
-import { File } from "../core/decorators/file";
-import { ZRequest, ZResponse } from "../core/types/message";
-import { ZFile } from "../core/parser";
-import { Body, Controller, Post } from "../core/decorators";
+import { Req } from "../decorators/req";
+import { Res } from "../decorators/res";
+import { File } from "../decorators/file";
+import { ZRequest, ZResponse } from "../types/message";
+import { ZFile } from "../parser";
+import { Body, Controller, Post } from "../decorators";
 import { AuthMiddleware } from "./halo";
 
 @Controller({ path: "/file" })

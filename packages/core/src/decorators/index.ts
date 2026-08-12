@@ -6,3 +6,4 @@ export * from "./query";
 export * from "./body";
 export * from "./route_http";
 export * from "./controller";
+export * from "./module"

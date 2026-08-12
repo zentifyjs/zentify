@@ -1,7 +1,7 @@
-import { Body, Controller, Get, Param, Post, Query } from "../core/decorators";
-import { NotFoundException } from "../core/exception/http";
-import { DTOClass } from "../core/types/dto";
-import { ZRequest, ZResponse } from "../core/types/message";
+import { Body, Controller, Get, Param, Post, Query } from "../decorators";
+import { NotFoundException } from "../exception/http";
+import { DTOClass } from "../types/dto";
+import { ZRequest, ZResponse } from "../types/message";
 import { z } from "zod";
 class CreateUserDto {
   static schema = z.object({

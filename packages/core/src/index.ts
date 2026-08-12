@@ -1,5 +1,6 @@
-export * from "./core";
-export * from "./core/router";
-export * from "./core/decorators";
-export * from "./core/exception/http";
-export * from "./core/types";
+export * from "./zify";
+export * from "./router";
+export * from "./decorators";
+export * from "./exception/http";
+export * from "./types";
+export { render, type ZifyViewEngine, type ZifyView } from "./view";

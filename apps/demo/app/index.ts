@@ -1,5 +1,5 @@
 // Main app entry point
-import { Route, Zify, render } from "zify";
+import { Route, Zify, render } from "@zify/core";
 import { ZifyBridge } from "@zify/bridge";
 import "./Routes/web"
 const app = new Zify({

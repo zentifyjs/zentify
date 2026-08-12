@@ -1,5 +1,5 @@
 import FindMyWay from "find-my-way";
-import type { Routes, HttpMethod } from "./route";
+import type { Routes, HttpMethod } from "../types";
 
 export class RouteTable {
   private readonly finder = FindMyWay({

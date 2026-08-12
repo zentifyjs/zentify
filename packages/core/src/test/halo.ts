@@ -1,5 +1,5 @@
-import { Middleware } from "../core/middleware";
-import { ZRequest, ZResponse } from "../core/types/message";
+import { Middleware } from "../types/middleware";
+import { ZRequest, ZResponse } from "../types/message";
 
 export class HaloMiddleware implements Middleware {
   async handle(

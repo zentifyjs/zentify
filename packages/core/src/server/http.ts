@@ -1,19 +1,19 @@
 import { createServer } from "node:http";
 
-import { HandlerFunction, HttpMethod, Routes, Route } from "../router/route";
-
+import { Route } from "../router/route";
 import { z } from "zod";
 
 import { enhanceRequest, enhanceResponse } from "./message";
 
 import { HttpException } from "../exception/http";
-import { Middleware } from "../middleware";
+import { Middleware } from "../types/middleware";
 import { AppContext } from "../types/app_context";
 import { getNetworkAddresses, Logger } from "../utils";
 import { ZRequest, ZResponse } from "../types/message";
 import { getParameterMetadata } from "../decorators/metadata";
 import { DTOClass } from "../types/dto";
 import { ZifyViewEngine, ZifyView } from "../view";
+import { HttpMethod, Routes } from "../types";
 
 export class HttpServer {
   private routes: Routes[] = [];

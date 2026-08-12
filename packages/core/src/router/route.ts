@@ -1,43 +1,11 @@
-import { getControllerMetadata, getRouteMetadata } from "../decorators";
+import { getControllerMetadata, getModuleMetadata, getRouteMetadata } from "../decorators";
 import { getParameterMetadata } from "../decorators/metadata";
-import { Middleware } from "../middleware";
+import type { ControllerClass, ControllerHandler, FunctionHandler, HandlerFunction, HttpMethod, ModuleClass, Routes } from "../types";
+import { Middleware } from "../types/middleware";
 import { normalizePath } from "../utils/route";
 import { matchRoute } from "./matcher";
 import { parseQuery } from "./query";
 import { RouteTable } from "./route_table";
-
-export type ControllerClass<T = any> = new (...args: any[]) => T;
-
-export type MethodKeys<T> = {
-  [K in keyof T]: T[K] extends (...args: any[]) => any ? K : never;
-}[keyof T];
-
-export type ControllerHandler<C extends ControllerClass<any>> = [
-  controller: C,
-  method: MethodKeys<InstanceType<C>>,
-];
-
-export type FunctionHandler = (...args: any[]) => any;
-
-export type HandlerFunction = [ControllerClass<any>, string] | FunctionHandler;
-
-export type HttpMethod =
-  | "GET"
-  | "POST"
-  | "PUT"
-  | "PATCH"
-  | "DELETE"
-  | "HEAD"
-  | "OPTIONS";
-
-export type Routes = {
-  method: HttpMethod;
-  path: string;
-  handler: HandlerFunction;
-  middlewares: Middleware[];
-  metadata?: any[];
-  controllerInstance?: any;
-};
 
 export class Route {
   private static routes: Routes[] = [];
@@ -87,7 +55,16 @@ export class Route {
     return { ...matched, query };
   }
 
-  static controller(
+  static module(module: ModuleClass){
+    const moduleMetadata = getModuleMetadata(module);
+    const controllerMetada = getControllerMetadata(moduleMetadata?.controllers!
+      [0]!
+    )
+    console.log(controllerMetada)
+    console.log(moduleMetadata)
+  }
+
+  private static controller(
     controller: ControllerClass,
     middlewares: Middleware[] = [],
   ): void {
