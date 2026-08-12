@@ -5,6 +5,9 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "type": "commonjs",
+  "bin": {
+    "zify": "./dist/cli/index.js"
+  },
   "scripts": {
     "dev": "concurrently --raw \"tsc --watch\" \"node --watch dist/main.js\"",
     "start": "tsx src/index.ts",
@@ -34,8 +37,11 @@
     "typescript": "^7.0.2"
   },
   "dependencies": {
+    "@inquirer/prompts": "^8.5.2",
     "busboy": "^1.6.0",
+    "commander": "^15.0.0",
     "find-my-way": "^9.7.0",
+    "picocolors": "^1.1.1",
     "reflect-metadata": "^0.2.2",
     "serve-static": "^2.2.1",
     "valibot": "^0.42.1"

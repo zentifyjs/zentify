@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+import { Command } from "commander";
+import { makeController } from "./commands/make-controller";
+import { makeService } from "./commands/make-service";
+import { makeModule } from "./commands/make-module";
+import { makeApp } from "./commands/make-app";
+
+const program = new Command();
+
+program
+  .name("zify")
+  .description("CLI for Zify framework")
+  .version("1.0.0");
+
+program.addCommand(makeApp);
+program.addCommand(makeController);
+program.addCommand(makeService);
+program.addCommand(makeModule);
+
+program.parse();

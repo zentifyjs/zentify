@@ -1,0 +1,17 @@
+{
+  "name": "demo-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev:backend": "concurrently --prefix none \"tsc --watch\" \"node --watch dist/app/index.js\"",
+    "dev": "npm run dev:backend",
+    "build:backend": "npx tsc"
+  },
+  "dependencies": {
+    "@zify/core": "git+https://github.com/Azzarnuji/zify.git"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.4",
+    "typescript": "^5.0.0"
+  }
+}
