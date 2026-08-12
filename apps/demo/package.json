@@ -5,7 +5,9 @@
   "scripts": {
     "dev:backend": "concurrently --prefix none \"tsc --watch\" \"node --watch dist/app/index.js\"",
     "dev:frontend": "vite",
-    "dev": "npm run dev:backend"
+    "dev": "npm run dev:backend",
+    "build:frontend": "vite build",
+    "build:backend": "npx tsc"
   },
   "dependencies": {
     "@zify/bridge": "*",

@@ -6,9 +6,12 @@ import { AppContext } from "./types/app_context";
 import { Logger } from "./utils";
 import { ZifyViewEngine } from "./view";
 
+import serveStatic from "serve-static";
+
 export class Zify {
   public context: AppContext = {};
   public viewEngine?: ZifyViewEngine;
+  private staticHandler?: ReturnType<typeof serveStatic>;
   private logger = new Logger({
     context: "App",
   });
@@ -18,6 +21,10 @@ export class Zify {
 
   setViewEngine(engine: ZifyViewEngine) {
     this.viewEngine = engine;
+  }
+
+  useStatic(path: string, options?: serveStatic.ServeStaticOptions) {
+    this.staticHandler = serveStatic(path, options);
   }
 
   addMiddleware(middleware: Middleware) {
@@ -32,6 +39,9 @@ export class Zify {
       );
     }
     const httpServer = new HttpServer(this.context, this.viewEngine);
+    if (this.staticHandler) {
+      httpServer.setStaticHandler(this.staticHandler);
+    }
     httpServer.registerRoutes(routes);
     this.logger.info("Starting server...");
     httpServer.start();

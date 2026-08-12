@@ -10,8 +10,11 @@ const app = new Zify({
 app.setViewEngine(
   new ZifyBridge({
     entry: "app/Views/main.tsx",
-    isDev: true,
+    manifestPath: "./dist/public/.vite/manifest.json",
+    isDev: false,
   })
 );
+
+app.useStatic("dist/public");
 
 app.run();

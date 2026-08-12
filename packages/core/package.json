@@ -28,6 +28,7 @@
   "devDependencies": {
     "@types/busboy": "^1.5.4",
     "@types/node": "^26.2.0",
+    "@types/serve-static": "^2.2.0",
     "concurrently": "^10.0.4",
     "tsx": "^4.23.11",
     "typescript": "^7.0.2"
@@ -36,6 +37,7 @@
     "busboy": "^1.6.0",
     "find-my-way": "^9.7.0",
     "reflect-metadata": "^0.2.2",
+    "serve-static": "^2.2.1",
     "valibot": "^0.42.1"
   }
 }

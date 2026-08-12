@@ -4,5 +4,11 @@
   "workspaces": [
     "packages/*",
     "apps/*"
-  ]
+  ],
+  "scripts": {
+    "build:core": "npm run build -w @zify/core",
+    "build:bridge": "npm run build -w @zify/bridge",
+    "build:react": "npm run build -w @zify/react",
+    "build:all": "npm run build:core && npm run build:bridge && npm run build:react"
+  }
 }

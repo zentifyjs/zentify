@@ -22,6 +22,7 @@ export class HttpServer {
   });
   private appContext: AppContext = {};
   private viewEngine?: ZifyViewEngine;
+  private staticHandler?: any;
   
   constructor(appContext: AppContext = {}, viewEngine?: ZifyViewEngine) {
     this.appContext = appContext;
@@ -29,6 +30,10 @@ export class HttpServer {
   }
   public registerRoutes(routes: Routes[]): void {
     this.routes = routes;
+  }
+
+  public setStaticHandler(handler: any): void {
+    this.staticHandler = handler;
   }
 
   private async handleRequest(req: ZRequest, res: ZResponse): Promise<void> {
@@ -44,6 +49,12 @@ export class HttpServer {
     );
 
     if (!matched) {
+      if (this.staticHandler) {
+        this.staticHandler(req, res, () => {
+          this.sendJsonResponse(res, 404, { message: "Route not found" });
+        });
+        return;
+      }
       this.sendJsonResponse(res, 404, { message: "Route not found" });
       return;
     }
@@ -98,7 +109,6 @@ export class HttpServer {
         const result = Array.isArray(route.handler)
           ? await this.callController(route, args)
           : await route.handler(...args);
-
         if (result !== undefined && !res.writableEnded) {
           if (typeof result === "object" && result !== null && "__isZifyView" in result && result.__isZifyView) {
             if (!this.viewEngine) {
