@@ -1,11 +1,14 @@
 import { getControllerMetadata, getModuleMetadata, getRouteMetadata } from "../decorators";
 import { getParameterMetadata } from "../decorators/metadata";
-import type { ControllerClass, ControllerHandler, FunctionHandler, HandlerFunction, HttpMethod, ModuleClass, Routes } from "../types";
+import { construct } from "../depedencies";
+import type { ControllerClass, ControllerHandler, FunctionHandler, HandlerFunction, HttpMethod, ModuleClass, ModuleMiddleware, Routes } from "../types";
 import { Middleware } from "../types/middleware";
 import { normalizePath } from "../utils/route";
-import { matchRoute } from "./matcher";
+import { matchMiddlewarePath, matchRoute } from "./matcher";
 import { parseQuery } from "./query";
 import { RouteTable } from "./route_table";
+
+
 
 export class Route {
   private static routes: Routes[] = [];
@@ -15,6 +18,8 @@ export class Route {
   private static prefixStack: string[] = [];
 
   private static groupMiddlewareStack: Middleware[][] = [];
+
+  private static moduleMiddlewareStack: ModuleMiddleware[][] = [];
 
   private static routeTable = new RouteTable();
 
@@ -57,29 +62,41 @@ export class Route {
 
   static module(module: ModuleClass){
     const moduleMetadata = getModuleMetadata(module);
-    const controllerMetada = getControllerMetadata(moduleMetadata?.controllers!
-      [0]!
-    )
-    console.log(controllerMetada)
-    console.log(moduleMetadata)
+    const middlewares = moduleMetadata?.middleware || [];
+    this.moduleMiddlewareStack.push(middlewares);
+
+    const controllers = moduleMetadata?.controllers || [];
+    const providers = moduleMetadata?.providers || [];
+
+    for (const ControllerClass of controllers) {
+      const controller = construct(ControllerClass, providers);
+      this.controller(controller, []);
+    }
+
+    this.moduleMiddlewareStack.pop();
   }
 
   private static controller(
-    controller: ControllerClass,
+    controllerOrInstance: any,
     middlewares: Middleware[] = [],
   ): void {
-    const prototype = controller.prototype;
+    const isInstance = typeof controllerOrInstance !== "function";
+    const ControllerClass = isInstance ? controllerOrInstance.constructor : controllerOrInstance;
+    const controllerInstance = isInstance ? controllerOrInstance : undefined;
+
+    const prototype = ControllerClass.prototype;
     const routes = getRouteMetadata(prototype);
 
-    const controllerMetadata = getControllerMetadata(controller);
+    const controllerMetadata = getControllerMetadata(ControllerClass);
     const controllerPath = controllerMetadata?.path || "";
 
     [...routes.entries()].map(([classMethod, metadata]) => {
       Route.addRoute(
         metadata.method,
         controllerPath + metadata.path,
-        [controller, classMethod.toString()],
+        [ControllerClass, classMethod.toString()],
         [...middlewares, ...metadata.middlewares],
+        controllerInstance
       );
     });
   }
@@ -89,6 +106,7 @@ export class Route {
     path: string,
     handler: HandlerFunction,
     middlewares: Middleware[] = [],
+    preBuiltInstance?: any
   ): void {
     const rawPath = this.getPrefix() + path;
 
@@ -102,6 +120,30 @@ export class Route {
     }
 
     const routeMiddlewares = [...this.getGroupMiddlewares(), ...middlewares];
+
+    const moduleMiddlewares = this.moduleMiddlewareStack.flat();
+    for (const mm of moduleMiddlewares) {
+      let isExcluded = false;
+      if (mm.excludeRoutes) {
+        isExcluded = mm.excludeRoutes.some(rule => 
+          (rule.method === "REQ_METHOD_ALL" || rule.method === method) &&
+          matchMiddlewarePath(routePath, rule.path)
+        );
+      }
+      if (isExcluded) continue;
+
+      let isIncluded = true;
+      if (mm.includeRoutes && mm.includeRoutes.length > 0) {
+        isIncluded = mm.includeRoutes.some(rule => 
+          (rule.method === "REQ_METHOD_ALL" || rule.method === method) &&
+          matchMiddlewarePath(routePath, rule.path)
+        );
+      }
+
+      if (isIncluded) {
+        routeMiddlewares.push(...mm.middlewares);
+      }
+    }
 
     const seen = new Set<Function>();
 
@@ -121,11 +163,13 @@ export class Route {
     }
 
     let metadata: any[] = [];
-    let controllerInstance: any = null;
+    let controllerInstance: any = preBuiltInstance || null;
 
     if (Array.isArray(handler)) {
       const [ControllerClass, methodName] = handler;
-      controllerInstance = new ControllerClass();
+      if (!controllerInstance) {
+        controllerInstance = construct(ControllerClass);
+      }
       metadata = getParameterMetadata(
         Object.getPrototypeOf(controllerInstance),
         methodName,

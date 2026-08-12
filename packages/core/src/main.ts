@@ -1,5 +1,6 @@
-import { Controller, Get, Module } from "./decorators";
+import { Controller, Get, Module, Dependency, Req } from "./decorators";
 import { Route } from "./router/route";
+import { Middleware, ZRequest, ZResponse } from "./types";
 import { Zify } from "./zify";
 
 const app = new Zify({
@@ -8,12 +9,34 @@ const app = new Zify({
     }
 });
 
-class AuthService{}
+class HomeMiddleware implements Middleware{
+    async handle(req: ZRequest, res: ZResponse, next: Function) {
+        console.log("Home Middleware")
+        await next()
+    }
+}
 
+@Dependency()
+class AuthService{
+    async auth(){
+        return true;
+    }
+}
+
+@Dependency()
 class HomeService{
     constructor(
         private readonly authService: AuthService
     ){}
+
+    async greeting(name: string){
+        const authorize = await this.authService.auth()
+        if (authorize){
+            return `${name} welcome`
+        }
+
+        return "Not Authorized"
+    }
 }
 
 @Controller({ path: "home" })
@@ -24,14 +47,39 @@ class HomeController {
     ){}
     
     @Get()
-    home(req: Request, res: Response) {
-        return "Home";
+    async home() {
+        return await this.homeService.greeting("Raja")
+    }
+
+    @Get(":id")
+    async homeID(@Req() req: ZRequest){
+        return await this.homeService.greeting(req.params.id)
     }
 }
 
 @Module({
     controllers: [HomeController],
-    providers: [],
+    providers: [
+        HomeService,
+        AuthService,
+    ],
+    middleware: [
+        {
+            middlewares: [new HomeMiddleware()],
+            excludeRoutes: [
+                {
+                    path: "/home/:id",
+                    method: "GET"
+                }
+            ],
+            includeRoutes: [
+                {
+                    path: "/home",
+                    method: "GET",
+                }
+            ]
+        }
+    ]
 })
 class AppModule {}
 
