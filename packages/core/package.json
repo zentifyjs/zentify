@@ -1,6 +1,6 @@
 {
   "name": "@zentify/core",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -20,10 +20,12 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
-    }
+    },
+    "./dist/cli/index.js": "./dist/cli/index.js"
   },
   "files": [
-    "dist"
+    "dist",
+    "templates"
   ],
   "keywords": [],
   "author": "",

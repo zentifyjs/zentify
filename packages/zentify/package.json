@@ -1,5 +1,5 @@
 {
-  "name": "zentify",
+  "name": "@zentify/cli",
   "version": "1.0.0",
   "description": "Zentify Command Line Interface",
   "bin": {
