@@ -8,7 +8,9 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "rootDir": ".",
+    "outDir": "./dist"
   },
   "include": ["**/*.ts", "**/*.tsx"]
 }

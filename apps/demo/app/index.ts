@@ -1,9 +1,9 @@
 // Main app entry point
 import { Route, Zify, render } from "@zify/core";
 import { ZifyBridge } from "@zify/bridge";
-import "./Routes/web"
+import "./Routes/web.js"
 const app = new Zify({
-  server: { port: 3000 },
+  server: { port: 3003 },
 });
 
 // Daftarkan View Engine
