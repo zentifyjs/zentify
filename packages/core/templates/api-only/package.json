@@ -3,12 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:backend": "concurrently --prefix none \"tsc --watch\" \"node --watch dist/app/index.js\"",
+    "dev:backend": "tsc && concurrently --prefix none \"tsc --watch\" \"node --watch dist/app/index.js\"",
     "dev": "npm run dev:backend",
     "build:backend": "npx tsc"
   },
   "dependencies": {
-    "@zentify/core": "git+https://github.com/Azzarnuji/zify.git"
+    "@zentify/core": "latest"
   },
   "devDependencies": {
     "concurrently": "^10.0.4",

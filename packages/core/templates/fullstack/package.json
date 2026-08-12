@@ -3,16 +3,16 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:backend": "concurrently --prefix none \"tsc --watch\" \"node --watch dist/app/index.js\"",
+    "dev:backend": "tsc && concurrently --prefix none \"tsc --watch\" \"node --watch dist/app/index.js\"",
     "dev:frontend": "vite",
     "dev": "npm run dev:backend",
     "build:frontend": "vite build",
     "build:backend": "npx tsc"
   },
   "dependencies": {
-    "@zentify/bridge": "git+https://github.com/Azzarnuji/zify.git",
-    "@zentify/core": "git+https://github.com/Azzarnuji/zify.git",
-    "@zentify/react": "git+https://github.com/Azzarnuji/zify.git",
+    "@zentify/bridge": "latest",
+    "@zentify/core": "latest",
+    "@zentify/react": "latest",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

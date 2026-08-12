@@ -10,8 +10,7 @@ const app = new Zentify({
 app.setViewEngine(
   new ZentifyBridge({
     entry: "app/Views/main.tsx",
-    manifestPath: "./dist/public/.vite/manifest.json",
-    isDev: false,
+    isDev: true,
   })
 );
 
