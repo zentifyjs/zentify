@@ -57,9 +57,13 @@ async function parseParams(req: ZRequest) {
 async function parseBody(req: ZRequest): Promise<unknown> {
   const request = req as ZRequest;
 
+  if (req.method === "GET" || req.method === "HEAD" || req.method === "OPTIONS") {
+    return undefined;
+  }
+
   const contentType = req.headers["content-type"] ?? "";
   const context = request.context ?? {};
-  const maxSize = context.bodyParser?.maxSize ?? 10 * 1024 * 1024; // Default to 10 MB if not specified
+  const maxSize = context.bodyParser?.maxSize ?? 10 * 1024 * 1024;
   const parser = getBodyParser(contentType, maxSize);
 
   if (parser) {

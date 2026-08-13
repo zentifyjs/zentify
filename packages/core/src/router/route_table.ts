@@ -8,11 +8,25 @@ export class RouteTable {
 
   private readonly registered: Routes[] = [];
 
+  private readonly staticRoutes = new Map<string, Routes>();
+
   add(route: Routes): void {
+    const isStatic = !route.path.includes(":") && !route.path.includes("*");
+
+    if (isStatic) {
+      const key = `${route.method}:${route.path}`;
+      if (this.staticRoutes.has(key)) {
+        throw new Error(`Duplicate route: ${route.method} ${route.path}`);
+      }
+      this.staticRoutes.set(key, route);
+    }
+
     try {
       this.finder.on(route.method, route.path, noop, route);
     } catch {
-      throw new Error(`Duplicate route: ${route.method} ${route.path}`);
+      if (!isStatic) {
+        throw new Error(`Duplicate route: ${route.method} ${route.path}`);
+      }
     }
 
     this.registered.push(route);
@@ -27,6 +41,16 @@ export class RouteTable {
         params: Record<string, string>;
       }
     | undefined {
+    const staticKey = `${method}:${pathname}`;
+    const staticRoute = this.staticRoutes.get(staticKey);
+    
+    if (staticRoute) {
+      return {
+        route: staticRoute,
+        params: {},
+      };
+    }
+
     const hit = this.finder.find(method, pathname);
 
     if (!hit) {
