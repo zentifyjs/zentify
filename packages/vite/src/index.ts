@@ -1,4 +1,4 @@
-import { ZentifyViewEngine, ZentifyAdapter, Zentify, ZRequest, ZResponse } from "@zentify/core";
+import { ZentifyViewEngine, ZentifyAdapter, Zentify, ZRequest, ZResponse, Logger } from "@zentify/core";
 import * as fs from "node:fs/promises";
 import { createServer, ViteDevServer } from "vite";
 
@@ -49,6 +49,7 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
   name = "ZentifyViteAdapter";
   private options: ZentifyViteOptions;
   private viteDevServer?: ViteDevServer;
+  private logger: Logger = new Logger({context: "ViteAdapter"})
   
   constructor(options: ZentifyViteOptions) {
     this.options = {
@@ -68,9 +69,9 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
           server: { middlewareMode: true },
           appType: 'custom',
         });
-        console.log("[ZentifyViteAdapter] Vite dev server initialized in middleware mode.");
+        this.logger.info("Vite dev server initialized in middleware mode.");
       } catch (error) {
-        console.error("[ZentifyViteAdapter] Failed to initialize Vite in middleware mode.", error);
+        this.logger.error("Failed to initialize Vite in middleware mode.", error);
       }
     }
   }
@@ -132,7 +133,7 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
               }
             }
           } catch (error) {
-            console.error("[ZentifyViteAdapter] Failed to read manifest.json", error);
+            this.logger.error("Failed to read manifest.json", error);
           }
         }
       }
@@ -157,7 +158,7 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.end(html);
     } catch (error) {
-      console.error("[ZentifyViteAdapter] Render Error:", error);
+      this.logger.error("Render Error:", error);
     }
   }
 }

@@ -1,6 +1,6 @@
 import { getControllerMetadata, getModuleMetadata, getRouteMetadata } from "../decorators";
 import { getParameterMetadata } from "../decorators/metadata";
-import { construct } from "../depedencies";
+import type { Container } from "../depedencies";
 import type { ControllerClass, ControllerHandler, FunctionHandler, HandlerFunction, HttpMethod, ModuleClass, ModuleMiddleware, Routes } from "../types";
 import { Middleware } from "../types/middleware";
 import { normalizePath } from "../utils/route";
@@ -22,6 +22,14 @@ export class Route {
   private static moduleMiddlewareStack: ModuleMiddleware[][] = [];
 
   private static routeTable = new RouteTable();
+
+  public static registeredModules: ModuleClass[] = [];
+
+  private static container: Container;
+
+  public static setContainer(container: Container) {
+    this.container = container;
+  }
 
   private static getPrefix(): string {
     return this.prefixStack.join("");
@@ -61,19 +69,26 @@ export class Route {
   }
 
   static module(module: ModuleClass){
-    const moduleMetadata = getModuleMetadata(module);
-    const middlewares = moduleMetadata?.middleware || [];
-    this.moduleMiddlewareStack.push(middlewares);
+    this.registeredModules.push(module);
+  }
 
-    const controllers = moduleMetadata?.controllers || [];
-    const providers = moduleMetadata?.providers || [];
+  static resolveModules() {
+    for (const module of this.registeredModules) {
+      const moduleMetadata = getModuleMetadata(module);
+      const middlewares = moduleMetadata?.middleware || [];
+      this.moduleMiddlewareStack.push(middlewares);
 
-    for (const ControllerClass of controllers) {
-      const controller = construct(ControllerClass, providers);
-      this.controller(controller, []);
+      const controllers = moduleMetadata?.controllers || [];
+      const providers = moduleMetadata?.providers || [];
+      const providerSet = new Set<any>([...providers, ...controllers]);
+
+      for (const ControllerClass of controllers) {
+        const controller = this.container.resolve(ControllerClass, providerSet);
+        this.controller(controller, []);
+      }
+
+      this.moduleMiddlewareStack.pop();
     }
-
-    this.moduleMiddlewareStack.pop();
   }
 
   private static controller(
@@ -168,7 +183,10 @@ export class Route {
     if (Array.isArray(handler)) {
       const [ControllerClass, methodName] = handler;
       if (!controllerInstance) {
-        controllerInstance = construct(ControllerClass);
+        if (!this.container) {
+          throw new Error("Container is not initialized. Make sure to call app.run() before resolving routes.");
+        }
+        controllerInstance = this.container.resolve(ControllerClass);
       }
       metadata = getParameterMetadata(
         Object.getPrototypeOf(controllerInstance),

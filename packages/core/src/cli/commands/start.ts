@@ -1,13 +1,17 @@
 import { Command } from "commander";
 import { spawn } from "node:child_process";
 import { resolveEntryPoint } from "../utils/config";
+import { Logger } from "../../utils";
 
 export const startCommand = new Command("start")
   .description("Start the Zentify application in production mode")
   .action(() => {
+    const logger = new Logger({
+      context: "start"
+    })
     const { dist } = resolveEntryPoint();
     
-    console.log(`[Zentify] Starting production server...`);
+    logger.info(`Starting production server...`);
     
     const nodeProcess = spawn("node", [dist], {
       stdio: "inherit",

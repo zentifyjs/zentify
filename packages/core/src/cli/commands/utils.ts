@@ -1,14 +1,16 @@
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import pc from "picocolors";
+import { Logger } from "../../utils";
 
 export async function generateFileFromTemplate(
   templateName: string,
   targetPath: string,
   replacements: Record<string, string>
 ) {
+  const logger = new Logger({context: "utils"})
   try {
-    const templatePath = path.resolve(__dirname, `../../../templates/${templateName}`);
+    const templatePath = path.resolve(__dirname, `../../../templates/tpls/${templateName}`);
     let content = await fs.readFile(templatePath, "utf-8");
 
     for (const [key, value] of Object.entries(replacements)) {
@@ -21,15 +23,15 @@ export async function generateFileFromTemplate(
     // Check if file exists
     try {
       await fs.access(targetPath);
-      console.log(pc.yellow(`File ${targetPath} already exists. Skipping...`));
+      logger.warn(`File ${targetPath} already exists. Skipping...`);
       return;
     } catch {
       // File does not exist, safe to write
     }
 
     await fs.writeFile(targetPath, content, "utf-8");
-    console.log(pc.green(`✔ Created ${targetPath}`));
+    logger.info(`Created ${targetPath}`);
   } catch (error: any) {
-    console.error(pc.red(`Error generating file: ${error.message}`));
+    logger.error(`Error generating file: ${error.message}`);
   }
 }

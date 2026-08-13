@@ -1,16 +1,15 @@
 {
   "name": "@zentify/react",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc"
   },
-  "dependencies": {
-    "react": "^18.3.0",
-    "react-dom": "^18.3.0"
-  },
+  "files": [
+    "dist"
+  ],
   "devDependencies": {
     "typescript": "^5.4.5",
     "@types/react": "^18.3.0",

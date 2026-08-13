@@ -1,6 +1,6 @@
 {
   "name": "@zentify/vite",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -10,9 +10,10 @@
   "files":[
     "dist"
   ],
-  "dependencies": {
-    "@vitejs/plugin-react": "^6.0.5",
-    "vite": "^8.2.1"
+  "dependencies": {},
+  "peerDependencies": {
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0",
+    "@vitejs/plugin-react": "^4.0.0 || ^5.0.0 || ^6.0.0"
   },
   "devDependencies": {
     "typescript": "^5.4.5"

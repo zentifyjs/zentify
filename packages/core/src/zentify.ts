@@ -6,11 +6,13 @@ import { AppContext } from "./types/app_context";
 import { Logger } from "./utils";
 import { ZentifyViewEngine } from "./view";
 import { ZentifyAdapter } from "./types/adapter";
+import { Container } from "./depedencies/container";
 
 import serveStatic from "serve-static";
 
 export class Zentify {
   public context: AppContext = {};
+  public container = new Container();
   private adapters: ZentifyAdapter[] = [];
   private staticHandler?: ReturnType<typeof serveStatic>;
   private logger = new Logger({
@@ -38,6 +40,9 @@ export class Zentify {
         await adapter.onInit(this);
       }
     }
+
+    Route.setContainer(this.container);
+    Route.resolveModules();
 
     const routes = Route.getRoutes();
     for (const route of routes) {

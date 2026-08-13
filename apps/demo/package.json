@@ -3,18 +3,19 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev:backend": "tsc && concurrently --prefix none \"tsc --watch\" \"node --watch-path=./dist dist/app/index.js\"",
-    "dev:frontend": "vite",
-    "dev": "npm run dev:backend",
-    "build:frontend": "vite build",
-    "build:backend": "npx tsc"
+    "dev": "zentify dev",
+    "build": "zentify build",
+    "start": "zentify start"
   },
   "dependencies": {
-    "@zentify/vite": "*",
     "@zentify/core": "*",
     "@zentify/react": "*",
+    "@zentify/typeorm": "*",
+    "@zentify/vite": "*",
+    "pg": "^8.23.0",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "typeorm": "^0.3.0"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
