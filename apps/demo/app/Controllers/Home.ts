@@ -11,7 +11,10 @@ export class HomeController{
 
     @Post("/api/greetings")
     async greeting(@Body() body: HomeDTO){
-        const result = await  this.homeService.greetings(body.name)
+        const result = await  this.homeService.createUser({
+            name: body.name,
+            email: body.email
+        })
         
         return {msg:result}
     }

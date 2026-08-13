@@ -42,7 +42,7 @@ export class Zentify {
     }
 
     Route.setContainer(this.container);
-    Route.resolveModules();
+    Route.resolveModules(this.adapters);
 
     const routes = Route.getRoutes();
     for (const route of routes) {

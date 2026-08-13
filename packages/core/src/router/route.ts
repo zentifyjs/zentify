@@ -72,7 +72,7 @@ export class Route {
     this.registeredModules.push(module);
   }
 
-  static resolveModules() {
+  static resolveModules(adapters: any[] = []) {
     for (const module of this.registeredModules) {
       const moduleMetadata = getModuleMetadata(module);
       const middlewares = moduleMetadata?.middleware || [];
@@ -81,6 +81,12 @@ export class Route {
       const controllers = moduleMetadata?.controllers || [];
       const providers = moduleMetadata?.providers || [];
       const providerSet = new Set<any>([...providers, ...controllers]);
+
+      for (const adapter of adapters) {
+        if (adapter.onModuleResolve) {
+          adapter.onModuleResolve(moduleMetadata || {}, providerSet, this.container);
+        }
+      }
 
       for (const ControllerClass of controllers) {
         const controller = this.container.resolve(ControllerClass, providerSet);

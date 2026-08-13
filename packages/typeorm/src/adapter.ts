@@ -1,5 +1,5 @@
 import { DataSource, DataSourceOptions } from "typeorm";
-import type { Zentify, ZentifyAdapter } from "@zentify/core";
+import { Route, getModuleMetadata, Zentify, ZentifyAdapter } from "@zentify/core";
 import * as path from "path";
 
 export class ZentifyTypeOrmAdapter implements ZentifyAdapter {
@@ -35,18 +35,26 @@ export class ZentifyTypeOrmAdapter implements ZentifyAdapter {
       token: "TYPEORM_DATA_SOURCE",
       useValue: this.dataSource,
     });
+  }
 
-    const entities = this.dataSource.entityMetadatas;
-    for (const metadata of entities) {
-      const entityName = metadata.name;
-      const token = `TYPEORM_REPOSITORY_${entityName}`;
-      
-      const repository = this.dataSource.getRepository(metadata.target);
-      
-      app.container.provide({
-        token,
-        useValue: repository,
-      });
+  onModuleResolve(moduleMetadata: any, providerSet: Set<any>, container: any) {
+    if (moduleMetadata.entities) {
+      for (const entity of moduleMetadata.entities) {
+        const entityName = typeof entity === "function" ? entity.name : (entity as any).options?.name || "Unknown";
+        const token = `TYPEORM_REPOSITORY_${entityName}`;
+        
+        // Ensure the repository is in the global container
+        if (!container.has(token)) {
+          const repository = this.dataSource.getRepository(entity);
+          container.provide({
+            token,
+            useValue: repository,
+          });
+        }
+        
+        // Add token to the module's allowed providers
+        providerSet.add(token);
+      }
     }
   }
 }

@@ -13,4 +13,9 @@ export class HomeService{
 
         return `Hello ${name} from service`
     }
+
+    async createUser({name,email}: {name: string, email: string}){
+        const result = await this.authService.create({name, email})
+        return result
+    }
 }

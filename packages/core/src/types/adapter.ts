@@ -21,4 +21,10 @@ export interface ZentifyAdapter {
    * is responsible for rendering views.
    */
   getViewEngine?(): ZentifyViewEngine;
+  
+  /**
+   * Lifecycle hook called when a module is resolved.
+   * Useful for registering module-scoped dependencies like ORM entities.
+   */
+  onModuleResolve?(moduleMetadata: any, providerSet: Set<any>, container: any): void;
 }

@@ -18,4 +18,5 @@ export type ModuleEntry = {
   controllers?: ControllerClass[];
   providers?: any[];
   middleware?: ModuleMiddleware[];
+  entities?: any[];
 };

@@ -18,6 +18,7 @@ class HomeMiddleware implements Middleware{
 
 @Dependency()
 class AuthService{
+    constructor(){}
     async auth(){
         return true;
     }
