@@ -35,6 +35,11 @@ export class ZentifyTypeOrmAdapter implements ZentifyAdapter {
       token: "TYPEORM_DATA_SOURCE",
       useValue: this.dataSource,
     });
+    
+    app.container.provide({
+      token: DataSource,
+      useValue: this.dataSource,
+    });
   }
 
   onModuleResolve(moduleMetadata: any, providerSet: Set<any>, container: any) {

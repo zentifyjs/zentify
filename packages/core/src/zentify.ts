@@ -7,6 +7,7 @@ import { Logger } from "./utils";
 import { ZentifyViewEngine } from "./view";
 import { ZentifyAdapter } from "./types/adapter";
 import { Container } from "./depedencies/container";
+import * as path from "node:path";
 
 import serveStatic from "serve-static";
 
@@ -34,7 +35,7 @@ export class Zentify {
     Route.use(middleware);
   }
 
-  async run() {
+  async boot() {
     for (const adapter of this.adapters) {
       if (adapter.onInit) {
         await adapter.onInit(this);
@@ -43,6 +44,38 @@ export class Zentify {
 
     Route.setContainer(this.container);
     Route.resolveModules(this.adapters);
+  }
+
+  private async runSeeder(seederClass: string) {
+    try {
+      const seederPath = path.join(process.cwd(), "app", "Database", "seeders", `${seederClass}.ts`);
+      // Import dynamically
+      const module = await import(path.resolve(seederPath).replace(/\\/g, '/'));
+      const SeederClassRef = module[seederClass];
+      
+      if (!SeederClassRef) {
+          throw new Error(`Seeder class ${seederClass} not found in ${seederPath}`);
+      }
+      
+      const seederInstance = new SeederClassRef();
+      this.logger.info(`Running seeder: ${seederClass}...`);
+      await seederInstance.run(this);
+      this.logger.info(`Seeder ${seederClass} completed successfully!`);
+      process.exit(0);
+    } catch (err: any) {
+      this.logger.error(`Failed to run seeder: ${err.message}`);
+      process.exit(1);
+    }
+  }
+
+  async run() {
+    await this.boot();
+
+    if (process.env.ZENTIFY_SEEDING === "true") {
+      const seederClass = process.env.ZENTIFY_SEED_CLASS || "DatabaseSeeder";
+      await this.runSeeder(seederClass);
+      return;
+    }
 
     const routes = Route.getRoutes();
     for (const route of routes) {

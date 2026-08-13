@@ -9,45 +9,23 @@ export const devCommand = new Command("dev")
     const logger = new Logger({
       context: "dev"
     })
-    const { dist } = resolveEntryPoint();
     
-    logger.info(`Starting development server...`);
+    logger.info(`Starting development server with ts-node...`);
     
-    const initialBuild = spawn("npx", ["tsc"], {
+    const child = spawn("node", ["--watch", "--loader", "ts-node/esm", "app/index.ts"], {
       stdio: "inherit",
       shell: true,
-      env: process.env,
+      env: {
+        ...process.env,
+        NODE_ENV: "development",
+      },
     });
 
-    initialBuild.on("close", (code) => {
-      if (code !== 0) {
-        logger.error(`Initial build failed with code ${code}.`);
-        process.exit(code ?? 1);
-      }
-      // Run tsc in watch mode
-      const tscProcess = spawn("npx", ["tsc", "--watch", "--preserveWatchOutput"], {
-        stdio: "inherit",
-        shell: true,
-        env: process.env,
-      });
-      
-      // Run node with watch-path set to dist
-      const nodeProcess = spawn("node", ["--watch-path=./dist", dist], {
-        stdio: "inherit",
-        shell: true,
-        env: {
-          ...process.env,
-          NODE_ENV: "development",
-        },
-      });
+    const cleanup = () => {
+      child.kill();
+      process.exit();
+    };
 
-      const cleanup = () => {
-        tscProcess.kill();
-        nodeProcess.kill();
-        process.exit();
-      };
-
-      process.on("SIGINT", cleanup);
-      process.on("SIGTERM", cleanup);
-    });
+    process.on("SIGINT", cleanup);
+    process.on("SIGTERM", cleanup);
   });
