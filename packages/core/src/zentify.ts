@@ -8,6 +8,7 @@ import { ZentifyViewEngine } from "./view";
 import { ZentifyAdapter } from "./types/adapter";
 import { Container } from "./depedencies/container";
 import * as path from "node:path";
+import { pathToFileURL } from "node:url";
 
 import serveStatic from "serve-static";
 
@@ -48,13 +49,41 @@ export class Zentify {
 
   private async runSeeder(seederClass: string) {
     try {
-      const seederPath = path.join(process.cwd(), "app", "Database", "seeders", `${seederClass}.ts`);
-      // Import dynamically
-      const module = await import(path.resolve(seederPath).replace(/\\/g, '/'));
-      const SeederClassRef = module[seederClass];
+      // 1. Try to load from .zentify/seeders/ (if running via db:seed bundle)
+      // 2. Try to load from dist/app/Database/seeders/ (if running in production)
+      // 3. Fallback to app/Database/seeders/ (if running via raw TS)
+      const possiblePaths = [
+        path.join(process.cwd(), ".zentify", "app", "Database", "seeders", `${seederClass}.js`),
+        path.join(process.cwd(), "dist", "app", "Database", "seeders", `${seederClass}.js`),
+        path.join(process.cwd(), "app", "Database", "seeders", `${seederClass}.ts`)
+      ];
+
+      let loadedModule;
+      let actualPath = "";
+      
+      for (const p of possiblePaths) {
+        try {
+          // Bypass tsc converting import() to require() in commonjs
+          const dynamicImport = new Function('modulePath', 'return import(modulePath)');
+          loadedModule = await dynamicImport(pathToFileURL(p).href);
+          actualPath = p;
+          break;
+        } catch (e: any) {
+          this.logger.error(`Failed loading from ${p}: ${e.message}`);
+          if (e.code !== 'ERR_MODULE_NOT_FOUND' && !e.message.includes("Cannot find module")) {
+             this.logger.error(`Error loading seeder from ${p}: ${e.message}`);
+          }
+        }
+      }
+      
+      if (!loadedModule) {
+          throw new Error(`Seeder class ${seederClass} not found in any expected location.`);
+      }
+
+      const SeederClassRef = loadedModule[seederClass];
       
       if (!SeederClassRef) {
-          throw new Error(`Seeder class ${seederClass} not found in ${seederPath}`);
+          throw new Error(`Seeder class ${seederClass} not found in ${actualPath}`);
       }
       
       const seederInstance = new SeederClassRef();

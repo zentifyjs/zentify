@@ -1,7 +1,7 @@
 import type { Zentify } from "@zentify/core";
 import type { Seeder } from "@zentify/typeorm";
 import { DataSource } from "typeorm";
-import { User } from "../../Models/User.js";
+import { User } from "../../Models/User";
 
 export class UserSeeder implements Seeder {
     public async run(app: Zentify): Promise<void> {
