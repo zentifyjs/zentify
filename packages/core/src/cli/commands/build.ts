@@ -3,8 +3,6 @@ import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { Logger } from "../../utils";
-import { ZentifyBundler } from "../utils/bundler";
-import { resolveEntryPoint } from "../utils/config";
 
 export const buildCommand = new Command("build")
   .description("Build the Zentify application for production")
@@ -14,28 +12,24 @@ export const buildCommand = new Command("build")
     })
     logger.info(`Building application...`);
     
-    // Step 1: Build Backend with SWC + esbuild
-    logger.info(`Bundling backend with SWC + esbuild...`);
-    
-    const { source } = resolveEntryPoint();
+    // Step 1: Build Backend with tsc
+    logger.info(`Compiling backend with tsc...`);
     
     try {
-      await ZentifyBundler.build([source], "dist");
-      logger.info(`Backend compilation successful. Adding .js extensions...`);
-      
-      const tscEsmFixProcess = spawn("npx", ["tsc-esm-fix", "--target=dist"], {
+      const tscProcess = spawn("npx", ["tsc"], {
         stdio: "inherit",
         shell: true,
+        env: process.env,
       });
 
       await new Promise<void>((resolve, reject) => {
-        tscEsmFixProcess.on("close", (code) => {
-          if (code !== 0) reject(new Error(`tsc-esm-fix failed with code ${code}`));
+        tscProcess.on("close", (code) => {
+          if (code !== 0 && code !== 2) reject(new Error(`tsc failed with code ${code}`));
           else resolve();
         });
       });
       
-      logger.info(`Extensions added successfully.`);
+      logger.info(`Backend compilation successful.`);
     } catch (e: any) {
       logger.error(`[Zentify] Backend compilation failed: ${e.message}`);
       process.exit(1);

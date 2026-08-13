@@ -1,8 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
+    "module": "commonjs",
     "strict": true,
     "jsx": "react-jsx",
     "experimentalDecorators": true,
@@ -12,5 +11,5 @@
     "rootDir": ".",
     "outDir": "./dist"
   },
-  "include": ["**/*.ts", "**/*.tsx"]
+  "include": ["**/*.ts"]
 }

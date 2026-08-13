@@ -160,15 +160,21 @@ export class HttpServer {
 
         case "body":
           const dto: DTOClass = param.additionalData?.dtoClass;
-          const result = safeParse(dto.schema, req.body);
-          if (result.success === false) {
-            throw new HttpException({
-              message: "Invalid request body",
-              statusCode: 422,
-              details: result.issues,
-            });
+          let result
+          if (dto && Object.hasOwn(dto, "schema")){
+            const dtoResult = safeParse(dto.schema, req.body);
+            if (dtoResult.success === false) {
+              throw new HttpException({
+                message: "Invalid request body",
+                statusCode: 422,
+                details: dtoResult.issues,
+              });
+            }
+            result = dtoResult.output;
+          }else{
+            result = req.body;
           }
-          args[param.index] = result.output;
+          args[param.index] = result;
           break;
 
         case "param":
