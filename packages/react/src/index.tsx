@@ -12,14 +12,7 @@ export interface ZentifyAppConfig {
   setup: (options: { el: HTMLElement; App: React.ElementType; props: any }) => void;
 }
 
-interface PageData {
-  component: string;
-  props: Record<string, any>;
-}
-
-// Global state for simple router
-let currentData: PageData | null = null;
-let subscribers: ((data: PageData) => void)[] = [];
+import { PageData, subscribe, unsubscribe } from "./utils/navigate";
 
 export function createZentifyApp({ resolve, setup }: ZentifyAppConfig) {
   const el = document.getElementById("zentify-app");
@@ -34,14 +27,13 @@ export function createZentifyApp({ resolve, setup }: ZentifyAppConfig) {
     return;
   }
 
-  currentData = JSON.parse(dataset) as PageData;
 
   const App = () => {
-    const [pageData, setPageData] = useState<PageData>(currentData!);
+    const [pageData, setPageData] = useState<PageData>(JSON.parse(dataset!));
 
     useEffect(() => {
       const handler = (newData: PageData) => setPageData(newData);
-      subscribers.push(handler);
+      subscribe(handler);
       
       const onPopState = (event: PopStateEvent) => {
         if (event.state && event.state.zentify) {
@@ -52,7 +44,7 @@ export function createZentifyApp({ resolve, setup }: ZentifyAppConfig) {
       window.addEventListener("popstate", onPopState);
 
       return () => {
-        subscribers = subscribers.filter((s) => s !== handler);
+        unsubscribe(handler);
         window.removeEventListener("popstate", onPopState);
       };
     }, []);
@@ -70,49 +62,8 @@ export function createZentifyApp({ resolve, setup }: ZentifyAppConfig) {
   setup({ el, App, props: {} });
 }
 
-export const navigate = async (url: string) => {
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "X-Zentify-Bridge": "true",
-        "Accept": "application/json",
-      },
-    });
 
-    if (response.ok) {
-      const data = await response.json();
-      currentData = data;
-      // Push state
-      window.history.pushState({ zentify: data }, "", url);
-      // Notify subscribers
-      subscribers.forEach((s) => s(data));
-    } else {
-      console.error("Zentify Navigation Failed:", response.statusText);
-      // Fallback to normal navigation
-      window.location.href = url;
-    }
-  } catch (error) {
-    console.error("Zentify Navigation Error:", error);
-    window.location.href = url;
-  }
-};
 
-interface LinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
-  href: string;
-}
 
-export const Link: React.FC<LinkProps> = ({ href, children, onClick, ...props }) => {
-  return React.createElement(
-    "a",
-    {
-      href,
-      onClick: (e: React.MouseEvent<HTMLAnchorElement>) => {
-        e.preventDefault();
-        if (onClick) onClick(e);
-        navigate(href);
-      },
-      ...props,
-    },
-    children
-  );
-};
+
+
