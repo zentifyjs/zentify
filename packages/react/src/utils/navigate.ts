@@ -14,6 +14,12 @@ export const unsubscribe = (handler: (data: PageData) => void) => {
   subscribers = subscribers.filter((s) => s !== handler);
 };
 
+export const handleNavigationResponse = (data: PageData, url: string) => {
+  currentData = data;
+  window.history.pushState({ zentify: data }, "", url);
+  subscribers.forEach((s) => s(data));
+};
+
 export const navigate = async (url: string) => {
   try {
     const response = await fetch(url, {
@@ -25,14 +31,9 @@ export const navigate = async (url: string) => {
 
     if (response.ok) {
       const data = await response.json();
-      currentData = data;
-      // Push state
-      window.history.pushState({ zentify: data }, "", url);
-      // Notify subscribers
-      subscribers.forEach((s) => s(data));
+      handleNavigationResponse(data, url);
     } else {
       console.error("Zentify Navigation Failed:", response.statusText);
-      // Fallback to normal navigation
       window.location.href = url;
     }
   } catch (error) {

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "@zentify/react/components";
+import { useForm } from "@zentify/react/hooks";
 import "../../index.css";
 
 interface User {
@@ -17,13 +18,59 @@ interface UsersProps {
   totalPages: number;
 }
 
+const DeleteButton = ({ id }: { id: number }) => {
+  const { post, processing } = useForm({ id });
+  return (
+    <button
+      disabled={processing}
+      onClick={() => {
+        if (confirm("Are you sure?")) post("/users/delete");
+      }}
+      style={{ padding: "5px 10px", cursor: "pointer", borderRadius: "5px", border: "none", background: "#f44336", color: "#fff" }}
+    >
+      {processing ? "..." : "Delete"}
+    </button>
+  );
+};
+
 export default function UsersIndex({ title, data, totalPages, page }: UsersProps) {
   const [editingUser, setEditingUser] = useState<User | null>(null);
+
+  const { data: formData, setData, setValues, post, processing, errors, clearErrors } = useForm({
+    id: "",
+    name: "",
+    email: ""
+  });
+
+  const handleEdit = (user: User) => {
+    setEditingUser(user);
+    setValues({ id: user.id.toString(), name: user.name, email: user.email });
+    clearErrors();
+  };
+
+  const handleCancelEdit = () => {
+    setEditingUser(null);
+    setValues({ id: "", name: "", email: "" });
+    clearErrors();
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (editingUser) {
+      post("/users/update", {
+        onSuccess: () => handleCancelEdit()
+      });
+    } else {
+      post("/users/create", {
+        onSuccess: () => handleCancelEdit()
+      });
+    }
+  };
 
   return (
     <div className="app-wrapper">
       <div className="container" style={{ maxWidth: "800px" }}>
-        <span className="badge">Zentify CRUD Demo (Traditional SSR)</span>
+        <span className="badge">Zentify CRUD Demo (SPA with useForm)</span>
         <h1>{title}</h1>
         <Link href="/" className="btn" style={{ marginBottom: "20px", display: "inline-block" }}>
           <span>&larr; Back to Home</span>
@@ -32,37 +79,44 @@ export default function UsersIndex({ title, data, totalPages, page }: UsersProps
         {/* Form (Create or Update) */}
         <div style={{ background: "rgba(255,255,255,0.05)", padding: "20px", borderRadius: "10px", marginBottom: "20px" }}>
           <h2>{editingUser ? "Edit User" : "Create New User"}</h2>
-          <form action={editingUser ? "/users/update" : "/users/create"} method="POST" style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
-            {editingUser && <input type="hidden" name="id" value={editingUser.id} />}
-            <input
-              type="text"
-              name="name"
-              placeholder="Name"
-              defaultValue={editingUser ? editingUser.name : ""}
-              required
-              style={{ padding: "10px", borderRadius: "5px", border: "none" }}
-            />
-            <input
-              type="email"
-              name="email"
-              placeholder="Email"
-              defaultValue={editingUser ? editingUser.email : ""}
-              required
-              style={{ padding: "10px", borderRadius: "5px", border: "none" }}
-            />
-            <button type="submit" className="btn" style={{ padding: "10px 20px" }}>
-              {editingUser ? "Update" : "Save"}
-            </button>
-            {editingUser && (
-              <button
-                type="button"
-                className="btn"
-                style={{ background: "#f44336", padding: "10px 20px" }}
-                onClick={() => setEditingUser(null)}
-              >
-                Cancel
+          <form onSubmit={handleSubmit} style={{ display: "flex", gap: "10px", alignItems: "flex-start", flexWrap: "wrap", flexDirection: "column" }}>
+            <div style={{ display: "flex", gap: "10px", width: "100%" }}>
+              <div style={{ flex: 1 }}>
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="Name"
+                  value={formData.name}
+                  onChange={(e) => setData("name", e.target.value)}
+                  style={{ padding: "10px", borderRadius: "5px", border: "none", width: "100%" }}
+                />
+                {errors.name && <div style={{ color: "#f44336", fontSize: "12px", marginTop: "5px" }}>{errors.name}</div>}
+              </div>
+              <div style={{ flex: 1 }}>
+                <input
+                  type="text"
+                  name="email"
+                  placeholder="Email"
+                  value={formData.email}
+                  onChange={(e) => setData("email", e.target.value)}
+                  style={{ padding: "10px", borderRadius: "5px", border: "none", width: "100%" }}
+                />
+                {errors.email && <div style={{ color: "#f44336", fontSize: "12px", marginTop: "5px" }}>{errors.email}</div>}
+              </div>
+              <button type="submit" className="btn" disabled={processing} style={{ padding: "10px 20px", height: "fit-content" }}>
+                {processing ? "Saving..." : (editingUser ? "Update" : "Save")}
               </button>
-            )}
+              {editingUser && (
+                <button
+                  type="button"
+                  className="btn"
+                  style={{ background: "#f44336", padding: "10px 20px", height: "fit-content" }}
+                  onClick={handleCancelEdit}
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
         </div>
 
@@ -86,23 +140,12 @@ export default function UsersIndex({ title, data, totalPages, page }: UsersProps
                     <td style={{ padding: "10px" }}>{user.email}</td>
                     <td style={{ padding: "10px", display: "flex", gap: "10px" }}>
                       <button
-                        onClick={() => setEditingUser(user)}
+                        onClick={() => handleEdit(user)}
                         style={{ padding: "5px 10px", cursor: "pointer", borderRadius: "5px", border: "none", background: "#2196F3", color: "#fff" }}
                       >
                         Edit
                       </button>
-                      <form action="/users/delete" method="POST" style={{ margin: 0 }}>
-                        <input type="hidden" name="id" value={user.id} />
-                        <button
-                          type="submit"
-                          onClick={(e) => {
-                            if (!confirm("Are you sure?")) e.preventDefault();
-                          }}
-                          style={{ padding: "5px 10px", cursor: "pointer", borderRadius: "5px", border: "none", background: "#f44336", color: "#fff" }}
-                        >
-                          Delete
-                        </button>
-                      </form>
+                      <DeleteButton id={user.id} />
                     </td>
                   </tr>
                 ))

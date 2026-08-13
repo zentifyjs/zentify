@@ -12,7 +12,7 @@ export class FileController {
   async create(
     @Res() res: ZResponse,
     @File("data") file: ZFile,
-    @Body({ raw: true }) body: Record<string, any>,
+    @Body() body: Record<string, any>,
   ) {
     console.log(body.name);
     await file.save(`uploads/${file.filename}`);

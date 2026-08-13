@@ -1,4 +1,5 @@
 import { ZRequest, ZResponse } from "../types/message";
+import { Purpose, ZentifyResponsePayload } from "../types";
 
 export interface ZentifyViewEngine {
   render(
@@ -9,16 +10,10 @@ export interface ZentifyViewEngine {
   ): string | Promise<string> | void | Promise<void>;
 }
 
-export interface ZentifyView {
-  __isZentifyView: true;
-  page: string;
-  props: Record<string, any>;
-}
-
-export function render(page: string, props: Record<string, any> = {}): ZentifyView {
+export function render(page: string, props: Record<string, any> = {}): ZentifyResponsePayload {
   return {
-    __isZentifyView: true,
-    page,
-    props,
+    __isZentifyResponse: true,
+    purpose: Purpose.view,
+    payload: { page, props }
   };
 }

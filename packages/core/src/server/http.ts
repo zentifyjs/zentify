@@ -1,313 +1,102 @@
 import { createServer } from "node:http";
-
-import { Route } from "../router/route";
-import { safeParse } from "valibot";
-
 import { enhanceRequest, enhanceResponse } from "./message";
-
-import { HttpException } from "../exception/http";
-import { Middleware } from "../types/middleware";
 import { AppContext } from "../types/app_context";
 import { getNetworkAddresses, Logger } from "../utils";
-import { ZRequest, ZResponse } from "../types/message";
-import { getParameterMetadata } from "../decorators/metadata";
-import { DTOClass } from "../types/dto";
-import { ZentifyViewEngine, ZentifyView } from "../view";
-import { HttpMethod, Routes } from "../types";
+import { Routes } from "../types";
 import { ZentifyAdapter } from "../types/adapter";
+import { ResponseHandler } from "./response";
+import { RequestDispatcher } from "./dispatcher";
 
 export class HttpServer {
-  private routes: Routes[] = [];
-  private logger = new Logger({
-    context: "HttpServer",
-  });
+  private logger = new Logger({ context: "HttpServer" });
   private appContext: AppContext = {};
   private adapters: ZentifyAdapter[] = [];
   private staticHandler?: any;
   
+  private responseHandler: ResponseHandler;
+  private dispatcher: RequestDispatcher;
+
   constructor(appContext: AppContext = {}, adapters: ZentifyAdapter[] = []) {
     this.appContext = appContext;
     this.adapters = adapters;
+    
+    this.responseHandler = new ResponseHandler(this.adapters);
+    this.dispatcher = new RequestDispatcher(this.responseHandler);
   }
+
   public registerRoutes(routes: Routes[]): void {
-    this.routes = routes;
+    // Routes are static in Route.routes, but we can keep this for interface compatibility
   }
 
   public setStaticHandler(handler: any): void {
     this.staticHandler = handler;
   }
 
-  private async handleRequest(req: ZRequest, res: ZResponse): Promise<void> {
-    const rawUrl = req.url ?? "/";
-    const qIndex = rawUrl.indexOf("?");
-    const pathname = qIndex !== -1 ? rawUrl.substring(0, qIndex) : rawUrl;
-    const search = qIndex !== -1 ? rawUrl.substring(qIndex + 1) : "";
-
-    const matched = Route.getRoute(
-      req.method as HttpMethod,
-      pathname,
-      search
-    );
-
-    if (!matched) {
-      if (this.staticHandler) {
-        this.staticHandler(req, res, () => {
-          this.sendJsonResponse(res, 404, { message: "Route not found" });
-        });
-        return;
-      }
-      this.sendJsonResponse(res, 404, { message: "Route not found" });
-      return;
-    }
-
-    const { route, params, query } = matched!;
-
-    req.params = params;
-    req.query = query;
-
-    const middlewares = Route.resolveMiddlewares(route);
-
-    await this.callHandler(route, req, res, middlewares);
-  }
-
-  private async executeMiddleware(
-    middlewares: Middleware[],
-    req: ZRequest,
-    res: ZResponse,
-    handler: () => Promise<void>,
-  ): Promise<void> {
-    let index = -1;
-
-    const dispatch = async (currentIndex: number): Promise<void> => {
-      if (currentIndex <= index) {
-        throw new Error("next() called multiple times");
-      }
-
-      index = currentIndex;
-
-      if (currentIndex === middlewares.length) {
-        await handler();
-        return;
-      }
-
-      const middleware = middlewares[currentIndex];
-
-      await middleware.handle(req, res, () => dispatch(currentIndex + 1));
-    };
-
-    await dispatch(0);
-  }
-
-  private async callHandler(
-    route: Routes,
-    req: ZRequest,
-    res: ZResponse,
-    middlewares: Middleware[],
-  ): Promise<void> {
-    try {
-      await this.executeMiddleware(middlewares, req, res, async () => {
-        const args: any[] = await this.getArgs(route, req, res);
-        const result = Array.isArray(route.handler)
-          ? await this.callController(route, args)
-          : await route.handler(...args);
-        if (result !== undefined && !res.writableEnded) {
-          if (typeof result === "object" && result !== null && "__isZentifyView" in result && result.__isZentifyView) {
-            // Retrieve view engine dynamically from adapters
-            let viewEngine: ZentifyViewEngine | undefined;
-            for (const adapter of this.adapters) {
-              if (adapter.getViewEngine) {
-                viewEngine = adapter.getViewEngine();
-                if (viewEngine) break;
-              }
-            }
-
-            if (!viewEngine) {
-              throw new Error("View Engine is not configured but a view was returned.");
-            }
-            const view = result as ZentifyView;
-            await viewEngine.render(view.page, view.props, req, res);
-          } else {
-            this.sendJsonResponse(res, 200, result);
-          }
-        }
-      });
-    } catch (error: unknown) {
-      this.handleException(error, res);
-    }
-  }
-
-  private async getArgs(
-    route: Routes,
-    req: ZRequest,
-    res: ZResponse,
-  ): Promise<any[]> {
-    const metadata = route.metadata || [];
-
-    const args: any[] = [];
-    if (metadata.length === 0) {
-      args.push(req, res);
-      return args;
-    }
-    for (const param of metadata) {
-      switch (param.type) {
-        case "req":
-          args[param.index] = req;
-          break;
-
-        case "res":
-          args[param.index] = res;
-          break;
-
-        case "body":
-          const dto: DTOClass = param.additionalData?.dtoClass;
-          let result
-          if (dto && Object.hasOwn(dto, "schema")){
-            const dtoResult = safeParse(dto.schema, req.body);
-            if (dtoResult.success === false) {
-              throw new HttpException({
-                message: "Invalid request body",
-                statusCode: 422,
-                details: dtoResult.issues,
-              });
-            }
-            result = dtoResult.output;
-          }else{
-            result = req.body;
-          }
-          args[param.index] = result;
-          break;
-
-        case "param":
-          args[param.index] = req.params[param.key!];
-          break;
-
-        case "query":
-          args[param.index] = req.query;
-          break;
-
-        case "file":
-          args[param.index] = await req.file(param.key!);
-          break;
-      }
-    }
-    return args;
-  }
-
-  private async callController(route: Routes, args: any[]) {
-    if (!Array.isArray(route.handler)) {
-      throw new Error("Handler is not a controller method");
-    }
-
-    const [_, methodName] = route.handler;
-    const controllerInstance = route.controllerInstance;
-    return controllerInstance[methodName](...args);
-  }
-
-  private handleException(error: unknown, res: ZResponse): void {
-    if (res.writableEnded) {
-      return;
-    }
-
-    if (error instanceof HttpException) {
-      this.sendJsonResponse(res, error.statusCode, {
-        message: error.message,
-        details: error.details,
-      });
-
-      return;
-    }
-
-    this.logger.error("Server error:", error);
-
-    this.sendJsonResponse(res, 500, {
-      message: "Internal Server Error",
-    });
-  }
-
-  private sendJsonResponse(
-    res: ZResponse,
-    statusCode: number,
-    data: unknown,
-  ): void {
-    if (res.writableEnded) {
-      return;
-    }
-
-    res.statusCode = statusCode;
-    res.json(data);
-  }
-
   public start(): void {
     const appContext = this.appContext;
+    const port = appContext.server?.port || 3000;
+    const host = appContext.server?.host || "localhost";
 
-    const port = appContext.server?.port ?? 3000;
+    const server = createServer(async (nodeReq, nodeRes) => {
+      const req = await enhanceRequest(nodeReq, this.appContext);
+      const res = enhanceResponse(nodeRes);
 
-    const host = appContext.server?.host ?? "localhost";
-
-    const server = createServer(async (req, res) => {
-      try {
-        const request = await enhanceRequest(req, this.appContext);
-
-        const response = enhanceResponse(res);
-
-        for (const adapter of this.adapters) {
-          const globalMw = adapter.getGlobalMiddleware?.();
-          if (globalMw) {
-            const proceed = await new Promise<boolean>((resolve) => {
-              res.once('finish', () => resolve(false));
-              res.once('close', () => resolve(false));
-              globalMw(req, res, () => resolve(true));
+      for (const adapter of this.adapters) {
+        const globalMiddleware = adapter.getGlobalMiddleware?.();
+        if (globalMiddleware) {
+          const proceed = await new Promise<boolean>((resolve, reject) => {
+            nodeRes.once('finish', () => resolve(false));
+            nodeRes.once('close', () => resolve(false));
+            
+            globalMiddleware(nodeReq, nodeRes, (err: any) => {
+              if (err) return reject(err);
+              resolve(true);
             });
-            if (!proceed) return;
+          });
+
+          if (!proceed) {
+            return; // Request handled by adapter middleware, stop execution
           }
         }
-
-        await this.handleRequest(request, response);
-      } catch (error: unknown) {
-        const response = res as ZResponse;
-
-        this.handleException(error, response);
       }
+
+      await this.dispatcher.dispatch(req, res, this.staticHandler);
     });
 
     server.listen(port, host, () => {
-      this.logger.info(`Server listening on http://${host}:${port}`);
-
-      if (host === "0.0.0.0") {
-        for (const address of getNetworkAddresses(port)) {
-          this.logger.info(`Network: ${address}`);
-        }
-      }
+      const isProd = process.env.NODE_ENV === "production";
+      const mode = isProd ? "Production" : "Development";
+      const urls = getNetworkAddresses(port);
+      this.logger.info(`Server running in ${mode} mode.`);
+      urls.forEach((url) => {
+        this.logger.info(`> ${url}`);
+      });
     });
 
-    server.on("error", (error: NodeJS.ErrnoException) => {
-      if (error.code === "EADDRINUSE") {
-        this.logger.error(
-          `Port ${port} is already in use. Please choose a different port.`,
-        );
-      } else {
-        this.logger.error("Server error:", error);
-      }
-    });
-
-    server.on("close", () => {
-      this.logger.info("Server closed");
-    });
-
-    const shutdownHandler = (signal: string) => {
-      this.logger.info(`Menerima signal ${signal}. Menutup server secara graceful...`);
+    process.on("SIGINT", () => {
+      this.logger.warn("Received SIGINT. Shutting down gracefully...");
       server.close(() => {
-        this.logger.info("Server berhasil ditutup.");
+        this.logger.info("Closed out remaining connections.");
         process.exit(0);
       });
 
-      if ('closeIdleConnections' in server) {
-        // @ts-ignore
-        server.closeIdleConnections();
-      }
-    };
+      setTimeout(() => {
+        this.logger.error("Could not close connections in time, forcefully shutting down");
+        process.exit(1);
+      }, 10000);
+    });
 
-    process.on("SIGINT", () => shutdownHandler("SIGINT"));
-    process.on("SIGTERM", () => shutdownHandler("SIGTERM"));
+    process.on("SIGTERM", () => {
+      this.logger.warn("Received SIGTERM. Shutting down gracefully...");
+      server.close(() => {
+        this.logger.info("Closed out remaining connections.");
+        process.exit(0);
+      });
+
+      setTimeout(() => {
+        this.logger.error("Could not close connections in time, forcefully shutting down");
+        process.exit(1);
+      }, 10000);
+    });
   }
 }

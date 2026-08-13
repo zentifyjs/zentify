@@ -1,0 +1,1 @@
+export const HTTP_HEADER_NAME = "X-Zentify-Bridge"

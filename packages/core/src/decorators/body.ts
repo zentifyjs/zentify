@@ -1,7 +1,7 @@
 import { assertDtoClass, isDtoClass } from "../utils";
 import { addParameterMetadata } from "./metadata";
 
-export function Body({ raw }: { raw?: boolean } = { raw: false }) {
+export function Body() {
   return function (
     target: object,
     propertyKey: string | symbol,
@@ -15,14 +15,11 @@ export function Body({ raw }: { raw?: boolean } = { raw: false }) {
 
     const dtoClass = paramTypes?.[parameterIndex];
 
-    if (!raw) {
-      assertDtoClass(dtoClass, target, propertyKey, parameterIndex);
-    }
     addParameterMetadata(target, propertyKey, {
       index: parameterIndex,
       type: "body",
       additionalData: {
-        dtoClass: paramTypes?.[parameterIndex],
+        dtoClass: isDtoClass(dtoClass) ? dtoClass : null,
       },
     });
   };
