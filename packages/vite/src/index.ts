@@ -1,7 +1,6 @@
 import { ZentifyViewEngine, ZentifyAdapter, Zentify, ZRequest, ZResponse, Logger } from "@zentify/core";
 import * as fs from "node:fs/promises";
-import { createServer, ViteDevServer } from "vite";
-
+import type { ViteDevServer } from "vite";
 export interface ZentifyViteOptions {
   /**
    * The entry point for the Vite Dev Server.
@@ -65,6 +64,7 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
   async onInit(app: Zentify) {
     if (this.options.isDev) {
       try {
+        const { createServer } = await import("vite");
         this.viteDevServer = await createServer({
           server: { middlewareMode: true },
           appType: 'custom',
