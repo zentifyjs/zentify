@@ -3,7 +3,7 @@ import { Route, Zentify, render } from "@zentify/core";
 import { ZentifyViteAdapter } from "@zentify/vite"
 import { ZentifyTypeOrmAdapter } from "@zentify/typeorm";
 
-import "./Routes/web.js"
+import "./Routes/web"
 
 const app = new Zentify({
   server: { port: 3003 },

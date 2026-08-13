@@ -1,6 +1,6 @@
 import type { Zentify } from "@zentify/core";
 import type { Seeder } from "@zentify/typeorm";
-import { UserSeeder } from "./UserSeeder.js";
+import { UserSeeder } from "./UserSeeder";
 
 export class DatabaseSeeder implements Seeder {
     public async run(app: Zentify): Promise<void> {

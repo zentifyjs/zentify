@@ -2,6 +2,8 @@ import { Command } from "commander";
 import { spawn } from "node:child_process";
 import { resolveEntryPoint } from "../utils/config";
 import { Logger } from "../../utils";
+import * as path from "node:path";
+import { pathToFileURL } from "node:url";
 
 export const startCommand = new Command("start")
   .description("Start the Zentify application in production mode")
@@ -15,7 +17,7 @@ export const startCommand = new Command("start")
     
     const nodeProcess = spawn("node", [dist], {
       stdio: "inherit",
-      shell: true,
+      shell: false,
       env: {
         ...process.env,
         NODE_ENV: "production",
