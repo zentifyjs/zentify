@@ -8,13 +8,31 @@ export interface ZentifyAppConfig {
   resolve: (name: string) => any;
   /**
    * The setup function responsible for mounting the React app.
+   * Optional. If not provided, Zentify will handle createRoot or hydrateRoot automatically.
    */
-  setup: (options: { el: HTMLElement; App: React.ElementType; props: any }) => void;
+  setup?: (options: { el: HTMLElement; App: React.ElementType; props: any }) => void;
 }
 
 import { PageData, subscribe, unsubscribe } from "./utils/navigate";
 
-export function createZentifyApp({ resolve, setup }: ZentifyAppConfig) {
+export async function createZentifyApp({ resolve, setup }: ZentifyAppConfig) {
+  const isServer = typeof window === "undefined";
+
+  if (isServer) {
+    (globalThis as any).__ZENTIFY_SSR__ = {
+      render: async (pageData: PageData) => {
+        const ComponentModule = await resolve(pageData.component);
+        const Component = ComponentModule.default || ComponentModule;
+        
+        const ReactDOMServer = await import("react-dom/server");
+        return ReactDOMServer.renderToString(
+          React.createElement(Component, pageData.props)
+        );
+      }
+    };
+    return;
+  }
+
   const el = document.getElementById("zentify-app");
   if (!el) {
     console.error("Zentify: Could not find element with id 'zentify-app'.");
@@ -59,7 +77,18 @@ export function createZentifyApp({ resolve, setup }: ZentifyAppConfig) {
     return React.createElement(Component, pageData.props);
   };
 
-  setup({ el, App, props: {} });
+  if (setup) {
+    setup({ el, App, props: {} });
+    return;
+  }
+
+  // Auto mount
+  const ReactDOMClient = await import("react-dom/client");
+  if (el.innerHTML.trim() !== "") {
+    ReactDOMClient.hydrateRoot(el, React.createElement(App));
+  } else {
+    ReactDOMClient.createRoot(el).render(React.createElement(App));
+  }
 }
 
 

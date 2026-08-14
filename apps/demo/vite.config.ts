@@ -13,7 +13,7 @@ const entries = Object.fromEntries(
   }),
 );
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
   plugins: [react()],
 
   build: {
@@ -25,10 +25,10 @@ export default defineConfig({
       input: entries,
 
       output: {
-        entryFileNames: "assets/[name]-[hash].js",
-        chunkFileNames: "assets/chunks/[name]-[hash].js",
+        entryFileNames: isSsrBuild ? "assets/[name]-[hash].mjs" : "assets/[name]-[hash].js",
+        chunkFileNames: isSsrBuild ? "assets/chunks/[name]-[hash].mjs" : "assets/chunks/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash][extname]",
       },
     },
   },
-});
+}));

@@ -1,5 +1,7 @@
 import { ZentifyViewEngine, ZentifyAdapter, Zentify, ZRequest, ZResponse, Logger } from "@zentify/core";
 import * as fs from "node:fs/promises";
+import * as path from "node:path";
+import * as url from "node:url";
 import type { ViteDevServer } from "vite";
 export interface ZentifyViteOptions {
   /**
@@ -7,6 +9,11 @@ export interface ZentifyViteOptions {
    * Typically 'src/main.tsx' or 'src/main.ts'.
    */
   entry: string;
+  /**
+   * Rendering mode: Client-Side Rendering or Server-Side Rendering
+   * Default: 'csr'
+   */
+  mode?: "csr" | "ssr";
   /**
    * Determine if we should inject Vite Dev Server scripts or load from manifest.
    * Default: process.env.NODE_ENV !== 'production'
@@ -52,6 +59,7 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
   
   constructor(options: ZentifyViteOptions) {
     this.options = {
+      mode: options.mode || "csr",
       isDev: options.isDev !== undefined ? options.isDev : process.env.NODE_ENV !== "production",
       htmlShell: defaultHtmlShell,
       reactRefresh: true,
@@ -124,7 +132,6 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
             const manifestContent = await fs.readFile(this.options.manifestPath, "utf-8");
             const manifest = JSON.parse(manifestContent);
             const entryChunk = manifest[this.options.entry];
-            console.log(entryChunk)
             if (entryChunk && entryChunk.file) {
               scripts = `<script type="module" src="/${entryChunk.file}"></script>`;
               if (entryChunk.css) {
@@ -145,6 +152,43 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
       if (this.viteDevServer) {
         html = await this.viteDevServer.transformIndexHtml(req.url || '/', html);
       }
+      
+      let appHtml = "";
+      if (this.options.mode === "ssr") {
+        try {
+          if (this.viteDevServer) {
+            await this.viteDevServer.ssrLoadModule("/" + this.options.entry);
+          } else {
+            // Load production server bundle using manifest to handle hashed filenames
+            const serverManifestPath = path.resolve(process.cwd(), "dist/server/.vite/manifest.json");
+            const manifestContent = await fs.readFile(serverManifestPath, "utf-8");
+            const manifest = JSON.parse(manifestContent);
+            const entryChunk = manifest[this.options.entry];
+            
+            if (!entryChunk || !entryChunk.file) {
+              throw new Error(`Could not find SSR entry '${this.options.entry}' in server manifest`);
+            }
+            
+            const serverBundlePath = path.resolve(process.cwd(), "dist/server", entryChunk.file);
+            const fileUrl = url.pathToFileURL(serverBundlePath).href;
+            await import(fileUrl);
+          }
+          
+          const ssr = (globalThis as any).__ZENTIFY_SSR__;
+          if (ssr && ssr.render) {
+            appHtml = await ssr.render({ component: page, props });
+          }
+        } catch (error) {
+          this.logger.error("SSR Error:", error);
+        }
+      }
+      
+      // Inject appHtml into the shell
+      html = html.replace(
+        /<div id="zentify-app"([^>]*)><\/div>/, 
+        `<div id="zentify-app"$1>${appHtml}</div>`
+      );
+
       
       // Inject initial data payload safely (escape quotes and script tags)
       const payload = JSON.stringify({ component: page, props })

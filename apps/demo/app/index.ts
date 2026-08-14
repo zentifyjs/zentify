@@ -24,6 +24,7 @@ app.addAdapter(
 
 // Daftarkan View Engine
 app.addAdapter(new ZentifyViteAdapter({
+  mode: "ssr",
   manifestPath: "dist/public/.vite/manifest.json",
   entry: "app/Views/main.tsx"
 }))
