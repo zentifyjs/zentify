@@ -8,6 +8,7 @@ export default function About({ title, version }: { title: string; version: stri
         <span className="badge">System Info</span>
         <h1>{title}</h1>
         <p>
+          Hii Brooo, how are you?
           You are currently running <strong>Version {version}</strong> of the application. Everything feels instant because you just performed a client-side navigation!
         </p>
         <Link href="/" className="btn">

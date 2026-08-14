@@ -8,21 +8,21 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "require": "./dist/index.cjs"
     },
     "./components": {
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js",
-      "default": "./dist/components/index.js"
+      "require": "./dist/components/index.cjs"
     },
-    "./hooks":{
+    "./hooks": {
       "types": "./dist/hooks/index.d.ts",
       "import": "./dist/hooks/index.js",
-      "default": "./dist/hooks/index.js"
+      "require": "./dist/hooks/index.cjs"
     }
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsup src/index.tsx src/components/index.ts src/hooks/index.ts --format cjs,esm --clean && tsc --emitDeclarationOnly"
   },
   "files": [
     "dist"

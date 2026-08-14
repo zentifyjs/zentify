@@ -29,6 +29,20 @@ export const buildCommand = new Command("build")
         });
       });
       
+      logger.info(`Resolving extensionless imports with tsc-alias...`);
+      const aliasProcess = spawn("npx", ["tsc-alias", "--resolve-full-paths"], {
+        stdio: "inherit",
+        shell: true,
+        env: process.env,
+      });
+      
+      await new Promise<void>((resolve, reject) => {
+        aliasProcess.on("close", (code) => {
+          if (code !== 0) reject(new Error(`tsc-alias failed with code ${code}`));
+          else resolve();
+        });
+      });
+      
       logger.info(`Backend compilation successful.`);
     } catch (e: any) {
       logger.error(`[Zentify] Backend compilation failed: ${e.message}`);

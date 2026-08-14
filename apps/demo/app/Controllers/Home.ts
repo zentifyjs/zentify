@@ -21,7 +21,7 @@ export class HomeController{
     
     @Get("/")
     async index(){
-        return render("Index", { title: "Zentify + React + Vite 🚀", user: "Raja" });
+        return render("Index", { title: "Hii broo, Welcome to Zentify + React + Vite 🚀", user: "Zentify" });
     }
 
     @Get("/about")

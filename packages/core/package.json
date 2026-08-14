@@ -4,15 +4,14 @@
   "description": "",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "bin": {
     "zentify": "./dist/cli/index.js"
   },
   "scripts": {
     "dev": "concurrently --raw \"tsc --watch\" \"node --watch dist/main.js\"",
     "start": "tsx src/index.ts",
-    "build": "tsc && npm run build:cjs",
-    "build:cjs": "tsc && node scripts/build-cjs.cjs",
+    "build": "tsup src/index.ts src/cli/index.ts --format cjs,esm --clean && tsc --emitDeclarationOnly",
     "typecheck": "tsc --noEmit"
   },
   "exports": {
@@ -21,7 +20,10 @@
       "import": "./dist/index.js",
       "require": "./dist/index.cjs"
     },
-    "./dist/cli/index.js": "./dist/cli/index.js"
+    "./dist/cli/index.js": {
+      "import": "./dist/cli/index.js",
+      "require": "./dist/cli/index.cjs"
+    }
   },
   "files": [
     "dist",

@@ -11,5 +11,8 @@
     "build:react": "npm run build -w @zentify/react",
     "build:typeorm": "npm run build -w @zentify/typeorm",
     "build:all": "npm run build:core && npm run build:react && npm run build:vite && npm run build:typeorm"
+  },
+  "devDependencies": {
+    "tsup": "^8.5.1"
   }
 }
