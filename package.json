@@ -10,9 +10,12 @@
     "build:vite": "npm run build -w @zentify/vite",
     "build:react": "npm run build -w @zentify/react",
     "build:typeorm": "npm run build -w @zentify/typeorm",
-    "build:all": "npm run build:core && npm run build:react && npm run build:vite && npm run build:typeorm"
+    "build:all": "npm run build:core && npm run build:react && npm run build:vite && npm run build:typeorm",
+    "publish:all": "npm run build:all && npm publish --workspaces --access public",
+    "bump": "node scripts/bump-version.mjs"
   },
   "devDependencies": {
+    "lerna": "^10.0.0",
     "tsup": "^8.5.1"
   }
 }

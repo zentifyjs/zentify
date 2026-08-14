@@ -1,6 +1,6 @@
 {
   "name": "@zentify/typeorm",
-  "version": "1.0.1",
+  "version": "1.0.1-rc-1",
   "description": "TypeORM integration for Zentify",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -11,7 +11,7 @@ export const makeApp = new Command("new")
   .action(async (name: string) => {
     const logger = new Logger({context: "make:app"})
     try {
-      const templatesDir = path.resolve(__dirname, `../../../templates`);
+      const templatesDir = path.resolve(__dirname, `../../templates`);
       const templateFolders = await fs.readdir(templatesDir, { withFileTypes: true });
 
       const templateChoices = [];

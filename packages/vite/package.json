@@ -1,6 +1,6 @@
 {
   "name": "@zentify/vite",
-  "version": "1.0.1-rc-1",
+  "version": "1.0.1-rc-2",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

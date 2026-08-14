@@ -10,7 +10,7 @@ export async function generateFileFromTemplate(
 ) {
   const logger = new Logger({context: "utils"})
   try {
-    const templatePath = path.resolve(__dirname, `../../../templates/tpls/${templateName}`);
+    const templatePath = path.resolve(__dirname, `../../templates/tpls/${templateName}`);
     let content = await fs.readFile(templatePath, "utf-8");
 
     for (const [key, value] of Object.entries(replacements)) {
