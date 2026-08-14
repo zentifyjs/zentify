@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "@zentify/react";
+import { Link } from "@zentify/react/components";
 import "../index.css";
 
 export default function About({ title, version }: { title: string; version: string }) {

@@ -33,16 +33,38 @@ export const devCommand = new Command("dev")
       initBuild.on("error", (err) => reject(err));
     });
     
+    // 2. Run tsc-alias initially
+    await new Promise<void>((resolve, reject) => {
+      const initAlias = spawn("npx", ["tsc-alias", "--resolve-full-paths"], {
+        stdio: "inherit",
+        shell: true,
+        env: process.env,
+      });
+      
+      initAlias.on("close", (code) => {
+        if (code === 0) resolve();
+        else reject(new Error(`Initial tsc-alias failed with code ${code}`));
+      });
+      
+      initAlias.on("error", (err) => reject(err));
+    });
+    
     logger.info(`Initial build complete. Starting watch mode...`);
 
-    // 2. Start tsc --watch and node --watch concurrently
+    // 3. Start tsc, tsc-alias, and node in watch mode
     const tscProcess = spawn("npx", ["tsc", "--watch", "--preserveWatchOutput"], {
       stdio: "inherit",
       shell: true,
       env: process.env,
     });
     
-    const nodeProcess = spawn("node", ["--watch", dist], {
+    const aliasProcess = spawn("npx", ["tsc-alias", "-w", "--resolve-full-paths"], {
+      stdio: "inherit",
+      shell: true,
+      env: process.env,
+    });
+    
+    const nodeProcess = spawn("node", [`--watch-path=dist`, dist], {
       stdio: "inherit",
       shell: true,
       env: {
@@ -57,5 +79,9 @@ export const devCommand = new Command("dev")
     
     tscProcess.on("error", (err) => {
       logger.error(`TSC process error: ${err.message}`);
+    });
+    
+    aliasProcess.on("error", (err) => {
+      logger.error(`TSC-Alias process error: ${err.message}`);
     });
   });

@@ -1,8 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "@zentify/react/components";
 import { useForm } from "@zentify/react/hooks";
-import "../../index.css";
-
 interface User {
   id: number;
   name: string;

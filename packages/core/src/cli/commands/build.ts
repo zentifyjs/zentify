@@ -29,6 +29,20 @@ export const buildCommand = new Command("build")
         });
       });
       
+      logger.info(`Resolving extensionless imports with tsc-alias...`);
+      const aliasProcess = spawn("npx", ["tsc-alias", "--resolve-full-paths"], {
+        stdio: "inherit",
+        shell: true,
+        env: process.env,
+      });
+      
+      await new Promise<void>((resolve, reject) => {
+        aliasProcess.on("close", (code) => {
+          if (code !== 0) reject(new Error(`tsc-alias failed with code ${code}`));
+          else resolve();
+        });
+      });
+      
       logger.info(`Backend compilation successful.`);
     } catch (e: any) {
       logger.error(`[Zentify] Backend compilation failed: ${e.message}`);
@@ -70,7 +84,25 @@ export const buildCommand = new Command("build")
             logger.error(`Frontend build failed with code ${viteCode}`);
             process.exit(viteCode ?? 1);
           }
-          logger.info(`Build completed successfully.`);
+          
+          logger.info(`Vite client build complete. Starting SSR build...`);
+          // Step 3: Server Build (for SSR)
+          const ssrProcess = spawn("npx", ["vite", "build", "--ssr", "app/Views/main.tsx", "--outDir", "dist/server"], {
+            stdio: "inherit",
+            shell: true,
+            env: {
+              ...process.env,
+              NODE_ENV: "production",
+            },
+          });
+          
+          ssrProcess.on("close", (ssrCode) => {
+            if (ssrCode !== 0) {
+              logger.error(`SSR build failed with code ${ssrCode}`);
+              process.exit(ssrCode ?? 1);
+            }
+            logger.info(`Build completed successfully.`);
+          });
         });
       } else {
         logger.info(`Build completed successfully.`);
