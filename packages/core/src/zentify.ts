@@ -9,19 +9,22 @@ import { ZentifyAdapter } from "./types/adapter";
 import { Container } from "./depedencies/container";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
-
+import { LifecycleManager } from "./lifecycle/manager";
 import serveStatic from "serve-static";
 
 export class Zentify {
   public context: AppContext = {};
   public container = new Container();
+  public lifecycle: LifecycleManager;
   private adapters: ZentifyAdapter[] = [];
   private staticHandler?: ReturnType<typeof serveStatic>;
   private logger = new Logger({
     context: "App",
   });
+  
   constructor(config: AppContext = {}) {
     this.context = config;
+    this.lifecycle = new LifecycleManager(this, this.adapters);
   }
 
   addAdapter(adapter: ZentifyAdapter) {
@@ -36,22 +39,8 @@ export class Zentify {
     Route.use(middleware);
   }
 
-  async boot() {
-    for (const adapter of this.adapters) {
-      if (adapter.onInit) {
-        await adapter.onInit(this);
-      }
-    }
-
-    Route.setContainer(this.container);
-    Route.resolveModules(this.adapters);
-  }
-
   private async runSeeder(seederClass: string) {
     try {
-      // 1. Try to load from .zentify/seeders/ (if running via db:seed bundle)
-      // 2. Try to load from dist/app/Database/seeders/ (if running in production)
-      // 3. Fallback to app/Database/seeders/ (if running via raw TS)
       const possiblePaths = [
         path.join(process.cwd(), ".zentify", "app", "Database", "seeders", `${seederClass}.js`),
         path.join(process.cwd(), "dist", "app", "Database", "seeders", `${seederClass}.js`),
@@ -63,13 +52,11 @@ export class Zentify {
       
       for (const p of possiblePaths) {
         try {
-          // Bypass tsc converting import() to require() in commonjs
           const dynamicImport = new Function('modulePath', 'return import(modulePath)');
           loadedModule = await dynamicImport(pathToFileURL(p).href);
           actualPath = p;
           break;
         } catch (e: any) {
-          this.logger.error(`Failed loading from ${p}: ${e.message}`);
           if (e.code !== 'ERR_MODULE_NOT_FOUND' && !e.message.includes("Cannot find module")) {
              this.logger.error(`Error loading seeder from ${p}: ${e.message}`);
           }
@@ -90,7 +77,7 @@ export class Zentify {
       this.logger.info(`Running seeder: ${seederClass}...`);
       await seederInstance.run(this);
       this.logger.info(`Seeder ${seederClass} completed successfully!`);
-      process.exit(0);
+      await this.lifecycle.shutdown();
     } catch (err: any) {
       this.logger.error(`Failed to run seeder: ${err.message}`);
       process.exit(1);
@@ -98,7 +85,9 @@ export class Zentify {
   }
 
   async run() {
-    await this.boot();
+    await this.lifecycle.boot();
+    Route.setContainer(this.container);
+    Route.resolveModules(this.adapters);
 
     if (process.env.ZENTIFY_MIGRATING) {
       const type = process.env.ZENTIFY_MIGRATING;
@@ -108,11 +97,12 @@ export class Zentify {
             await adapter.onMigrate(type);
           }
         }
-        process.exit(0);
+        await this.lifecycle.shutdown();
       } catch (err: any) {
         this.logger.error(`Migration failed: ${err.message}`);
         process.exit(1);
       }
+      return;
     }
 
     if (process.env.ZENTIFY_SEEDING === "true") {
@@ -127,12 +117,18 @@ export class Zentify {
         `Registered route: [${route.method}] ${route.path} -> ${typeof route.handler === "function" ? "FunctionHandler" : `${route.handler[0].name}.${route.handler[1]}`}`,
       );
     }
-    const httpServer = new HttpServer(this.context, this.adapters);
+    const server = new HttpServer(this.context, this.adapters);
+    this.lifecycle.registerShutdownHook(async () => {
+      if (server) {
+        await server.stop();
+      }
+    });
+    
     if (this.staticHandler) {
-      httpServer.setStaticHandler(this.staticHandler);
+      server.setStaticHandler(this.staticHandler);
     }
-    httpServer.registerRoutes(routes);
+    server.registerRoutes(routes);
     this.logger.info("Starting server...");
-    httpServer.start();
+    server.start();
   }
 }

@@ -15,10 +15,12 @@ export class HttpServer {
   
   private responseHandler: ResponseHandler;
   private dispatcher: RequestDispatcher;
+  private onShutdown?: () => Promise<void>;
 
-  constructor(appContext: AppContext = {}, adapters: ZentifyAdapter[] = []) {
+  constructor(appContext: AppContext = {}, adapters: ZentifyAdapter[] = [], onShutdown?: () => Promise<void>) {
     this.appContext = appContext;
     this.adapters = adapters;
+    this.onShutdown = onShutdown;
     
     this.responseHandler = new ResponseHandler(this.adapters);
     this.dispatcher = new RequestDispatcher(this.responseHandler);
@@ -32,12 +34,14 @@ export class HttpServer {
     this.staticHandler = handler;
   }
 
+  private serverInstance?: ReturnType<typeof createServer>;
+
   public start(): void {
     const appContext = this.appContext;
     const port = appContext.server?.port || 3000;
     const host = appContext.server?.host || "localhost";
 
-    const server = createServer(async (nodeReq, nodeRes) => {
+    this.serverInstance = createServer(async (nodeReq, nodeRes) => {
       const req = await enhanceRequest(nodeReq, this.appContext);
       const res = enhanceResponse(nodeRes);
 
@@ -63,7 +67,7 @@ export class HttpServer {
       await this.dispatcher.dispatch(req, res, this.staticHandler);
     });
 
-    server.listen(port, host, () => {
+    this.serverInstance.listen(port, host, () => {
       const isProd = process.env.NODE_ENV === "production";
       const mode = isProd ? "Production" : "Development";
       const urls = getNetworkAddresses(port);
@@ -72,31 +76,17 @@ export class HttpServer {
         this.logger.info(`> ${url}`);
       });
     });
+  }
 
-    process.on("SIGINT", () => {
-      this.logger.warn("Received SIGINT. Shutting down gracefully...");
-      server.close(() => {
-        this.logger.info("Closed out remaining connections.");
-        process.exit(0);
-      });
-
-      setTimeout(() => {
-        this.logger.error("Could not close connections in time, forcefully shutting down");
-        process.exit(1);
-      }, 10000);
-    });
-
-    process.on("SIGTERM", () => {
-      this.logger.warn("Received SIGTERM. Shutting down gracefully...");
-      server.close(() => {
-        this.logger.info("Closed out remaining connections.");
-        process.exit(0);
-      });
-
-      setTimeout(() => {
-        this.logger.error("Could not close connections in time, forcefully shutting down");
-        process.exit(1);
-      }, 10000);
+  public stop(): Promise<void> {
+    return new Promise((resolve) => {
+      if (this.serverInstance) {
+        this.serverInstance.close(() => {
+          resolve();
+        });
+      } else {
+        resolve();
+      }
     });
   }
 }

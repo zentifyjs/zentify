@@ -128,4 +128,14 @@ export class ZentifyTypeOrmAdapter implements ZentifyAdapter {
       }
     }
   }
+
+  async onClose(app: Zentify){
+    try {
+      this.logger.info(`Closing database connection...`);
+      await this.dataSource.destroy();
+      this.logger.info(`Database connection closed.`);
+    } catch (error) {
+      this.logger.error(`Failed to close database connection: ${(error as Error).message}`);
+    }
+  }
 }

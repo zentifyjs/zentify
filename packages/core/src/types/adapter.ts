@@ -11,6 +11,23 @@ export interface ZentifyAdapter {
   onInit?(app: Zentify): Promise<void> | void;
   
   /**
+   * Lifecycle hook called when a module is resolved.
+   * Useful for registering module-scoped dependencies like ORM entities.
+   */
+  onModuleResolve?(moduleMetadata: any, providerSet: Set<any>, container: any): void;
+
+  /**
+   * Lifecycle hook called to run database migrations.
+   */
+  onMigrate?(type: string): Promise<void> | void;
+
+
+  /**
+   * Lifecycle hook called when the application is closing.
+   */
+  onClose?(app: Zentify): Promise<void> | void;
+
+  /**
    * Returns a connect-style middleware (req, res, next)
    * that will be executed by HttpServer before Zify Router.
    */
@@ -21,15 +38,4 @@ export interface ZentifyAdapter {
    * is responsible for rendering views.
    */
   getViewEngine?(): ZentifyViewEngine;
-  
-  /**
-   * Lifecycle hook called when a module is resolved.
-   * Useful for registering module-scoped dependencies like ORM entities.
-   */
-  onModuleResolve?(moduleMetadata: any, providerSet: Set<any>, container: any): void;
-
-  /**
-   * Lifecycle hook called to run database migrations.
-   */
-  onMigrate?(type: string): Promise<void> | void;
 }

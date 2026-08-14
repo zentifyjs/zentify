@@ -6,7 +6,7 @@ export class User1786692526684 implements MigrationInterface {
         await queryRunner.createTable(
             new Table(
                 {
-                    name: "users",
+                    name: "user",
                     columns: [
                         new TableColumn({
                             name: "id",
@@ -16,16 +16,14 @@ export class User1786692526684 implements MigrationInterface {
                             generationStrategy: "increment",
                         }),
                         new TableColumn({
-                            name: "username",
-                            type: "varchar"
-                        }),
-                        new TableColumn({
-                            name: "password",
-                            type: "varchar"
+                            name: "name",
+                            type: "varchar",
+                            length: "255"
                         }),
                         new TableColumn({
                             name: "email",
-                            type: "varchar"
+                            type: "varchar",
+                            length: "255",
                         })
                     ]
                 }
