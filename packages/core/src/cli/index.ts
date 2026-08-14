@@ -19,6 +19,7 @@ program
 import { makeMigration } from "./commands/make-migration";
 import { makeSeeder } from "./commands/make-seeder";
 import { dbSeed } from "./commands/db-seed";
+import { migrateRun, migrateRevert, migrateFresh } from "./commands/migrate";
 
 program.addCommand(makeApp);
 program.addCommand(makeController);
@@ -28,6 +29,9 @@ program.addCommand(makeModel);
 program.addCommand(makeMigration);
 program.addCommand(makeSeeder);
 program.addCommand(dbSeed);
+program.addCommand(migrateRun);
+program.addCommand(migrateRevert);
+program.addCommand(migrateFresh);
 program.addCommand(devCommand);
 program.addCommand(buildCommand);
 program.addCommand(startCommand);

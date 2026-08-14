@@ -27,4 +27,9 @@ export interface ZentifyAdapter {
    * Useful for registering module-scoped dependencies like ORM entities.
    */
   onModuleResolve?(moduleMetadata: any, providerSet: Set<any>, container: any): void;
+
+  /**
+   * Lifecycle hook called to run database migrations.
+   */
+  onMigrate?(type: string): Promise<void> | void;
 }

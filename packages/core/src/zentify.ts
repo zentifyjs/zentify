@@ -100,6 +100,21 @@ export class Zentify {
   async run() {
     await this.boot();
 
+    if (process.env.ZENTIFY_MIGRATING) {
+      const type = process.env.ZENTIFY_MIGRATING;
+      try {
+        for (const adapter of this.adapters) {
+          if (adapter.onMigrate) {
+            await adapter.onMigrate(type);
+          }
+        }
+        process.exit(0);
+      } catch (err: any) {
+        this.logger.error(`Migration failed: ${err.message}`);
+        process.exit(1);
+      }
+    }
+
     if (process.env.ZENTIFY_SEEDING === "true") {
       const seederClass = process.env.ZENTIFY_SEED_CLASS || "DatabaseSeeder";
       await this.runSeeder(seederClass);

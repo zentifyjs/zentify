@@ -17,8 +17,8 @@ app.addAdapter(
     username: "postgres",
     password: "",
     database: "zentify",
-    entities: ["./Models/**/*.{ts,js}"],
-    synchronize: true,
+    // entities: ["./Models/**/*.{ts,js}"],
+    // migrations: ["./Database/Migrations/**/*.{ts,js}"]
   })
 );
 

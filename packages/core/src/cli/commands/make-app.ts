@@ -1,9 +1,13 @@
 import { Command } from "commander";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
+import { fileURLToPath } from "node:url";
 import pc from "picocolors";
 import { select } from "@inquirer/prompts";
 import { Logger } from "../../utils";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const makeApp = new Command("new")
   .description("Create a new Zentify application")
