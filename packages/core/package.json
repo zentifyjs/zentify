@@ -37,13 +37,11 @@
     "@types/node": "^26.2.0",
     "@types/serve-static": "^2.2.0",
     "concurrently": "^10.0.4",
-    "ts-node": "^10.9.2",
     "tsx": "^4.23.11",
     "typescript": "^7.0.2"
   },
   "dependencies": {
     "@inquirer/prompts": "^8.5.2",
-    "@swc-node/register": "^1.12.1",
     "@swc/core": "^1.15.47",
     "busboy": "^1.6.0",
     "commander": "^15.0.0",
@@ -52,7 +50,6 @@
     "picocolors": "^1.1.1",
     "reflect-metadata": "^0.2.2",
     "serve-static": "^2.2.1",
-    "tsc-esm-fix": "^3.1.2",
     "valibot": "^0.42.1"
   }
 }
