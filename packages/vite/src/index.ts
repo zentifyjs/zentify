@@ -124,6 +124,7 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
             const manifestContent = await fs.readFile(this.options.manifestPath, "utf-8");
             const manifest = JSON.parse(manifestContent);
             const entryChunk = manifest[this.options.entry];
+            console.log(entryChunk)
             if (entryChunk && entryChunk.file) {
               scripts = `<script type="module" src="/${entryChunk.file}"></script>`;
               if (entryChunk.css) {
