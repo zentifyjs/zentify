@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "@zentify/react/components";
+import { getEnv } from "@zentify/react/utils";
 
 export default function About({
   title,
@@ -16,7 +17,7 @@ export default function About({
   databaseUrl: string;
   testApiUrl: string;
 }) {
-  const clientEnv = process.env.FRONTEND_TEST_API;
+  const clientEnv = getEnv("FRONTEND_TEST_API");
   return (
     <div className="app-wrapper">
       <div className="container" style={{ animationDelay: "0.2s" }}>

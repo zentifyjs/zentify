@@ -109,13 +109,15 @@ export const makeApp = new Command("new")
           // Baca template files
           let dbAdapterCode = await fs.readFile(path.join(templatesDir, "tpls", "database-adapter.ts.tpl"), "utf-8");
           const userModelCode = await fs.readFile(path.join(templatesDir, "tpls", "user-model.ts.tpl"), "utf-8");
-          
-          // Replace placeholders
-          dbAdapterCode = dbAdapterCode.replace("__DB_TYPE__", isMysql ? "mysql" : "postgres");
-          dbAdapterCode = dbAdapterCode.replace("__DB_PORT__", isMysql ? "3306" : "5432");
-          dbAdapterCode = dbAdapterCode.replace("__DB_USERNAME__", isMysql ? "root" : "postgres");
+
+          // Point the DATABASE_URL in .env at the chosen DB so the factory adapter can parse it
+          const dbUrl = isMysql ? "mysql://root@localhost:3306/zentify" : "postgres://postgres@localhost:5432/zentify";
+          await setEnvValue(path.join(targetDir, ".env"), "DATABASE_URL", dbUrl);
 
           indexTs = `import { ZentifyTypeOrmAdapter } from "@zentify/typeorm";\n` + indexTs;
+          if (!indexTs.includes("Config/AppConfig")) {
+            indexTs = `import { AppConfig } from "./Config/AppConfig.js";\n` + indexTs;
+          }
           indexTs = indexTs.replace("app.run();", dbAdapterCode + "\napp.run();");
           
           await fs.writeFile(indexTsPath, indexTs, "utf-8");
@@ -156,4 +158,28 @@ async function copyDir(src: string, dest: string) {
       await fs.copyFile(srcPath, destPath);
     }
   }
+}
+
+async function setEnvValue(envPath: string, key: string, value: string) {
+  let lines: string[] = [];
+  try {
+    const content = await fs.readFile(envPath, "utf-8");
+    lines = content.split(/\r?\n/);
+  } catch {
+    // .env does not exist yet, will be created
+  }
+
+  const prefix = `${key}=`;
+  let replaced = false;
+  const updated = lines.map((line) => {
+    if (line.trimStart().startsWith(prefix)) {
+      replaced = true;
+      return `${key}=${value}`;
+    }
+    return line;
+  });
+
+  if (!replaced) updated.push(`${key}=${value}`);
+
+  await fs.writeFile(envPath, updated.join("\n"), "utf-8");
 }

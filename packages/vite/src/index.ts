@@ -1,4 +1,4 @@
-import { ZentifyViewEngine, ZentifyAdapter, Zentify, ZRequest, ZResponse, Logger, ConfigService } from "@zentify/core";
+import { ZentifyViewEngine, ZentifyAdapter, Zentify, ZRequest, ZResponse, Logger, ConfigService, resolveOutDir } from "@zentify/core";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as url from "node:url";
@@ -61,13 +61,14 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
   private viteDevServer?: ViteDevServer;
   private logger: Logger = new Logger({context: "ViteAdapter"})
   
-  constructor(options: ZentifyViteOptions) {
+  constructor(options?: ZentifyViteOptions) {
     this.options = {
-      mode: options.mode || "csr",
-      isDev: options.isDev !== undefined ? options.isDev : process.env.NODE_ENV !== "production",
+      mode: options?.mode || "csr",
+      entry: "app/Views/main.tsx",
+      isDev: options?.isDev !== undefined ? options?.isDev : process.env.NODE_ENV !== "production",
       htmlShell: defaultHtmlShell,
       reactRefresh: true,
-      manifestPath: "./dist/public/.vite/manifest.json",
+      manifestPath: `./${resolveOutDir()}/public/.vite/manifest.json`,
       ...options,
     };
 
@@ -171,7 +172,8 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
             await this.viteDevServer.ssrLoadModule("/" + this.options.entry);
           } else {
             // Load production server bundle using manifest to handle hashed filenames
-            const serverManifestPath = path.resolve(process.cwd(), "dist/server/.vite/manifest.json");
+            const outDir = resolveOutDir();
+            const serverManifestPath = path.resolve(process.cwd(), outDir, "server", ".vite", "manifest.json");
             const manifestContent = await fs.readFile(serverManifestPath, "utf-8");
             const manifest = JSON.parse(manifestContent);
             const entryChunk = manifest[this.options.entry];
@@ -180,7 +182,7 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
               throw new Error(`Could not find SSR entry '${this.options.entry}' in server manifest`);
             }
             
-            const serverBundlePath = path.resolve(process.cwd(), "dist/server", entryChunk.file);
+            const serverBundlePath = path.resolve(process.cwd(), outDir, "server", entryChunk.file);
             const fileUrl = url.pathToFileURL(serverBundlePath).href;
             await import(fileUrl);
           }

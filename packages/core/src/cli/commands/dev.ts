@@ -1,5 +1,6 @@
 import { Command } from "commander";
 import { resolveEntryPoint, getZentifyConfig } from "../utils/config";
+import { resolveOutDir } from "../../utils/zentify-config";
 import { Logger } from "../../utils";
 import { spawn } from "node:child_process";
 import * as fs from "node:fs";
@@ -14,12 +15,13 @@ export const devCommand = new Command("dev")
     });
     
     const { dist } = resolveEntryPoint();
+    const outDir = resolveOutDir();
     
     logger.info(`Starting development server...`);
     
     // 1. Compile initially
     await new Promise<void>((resolve, reject) => {
-      const initBuild = spawn("npx", ["tsc"], {
+      const initBuild = spawn("npx", ["tsc", "--outDir", outDir], {
         stdio: "ignore", // Suppress initial tsc output
         shell: true,
         env: process.env,
@@ -38,7 +40,7 @@ export const devCommand = new Command("dev")
     
     // 2. Run tsc-alias initially
     await new Promise<void>((resolve, reject) => {
-      const initAlias = spawn("npx", ["tsc-alias", "--resolve-full-paths"], {
+      const initAlias = spawn("npx", ["tsc-alias", "--resolve-full-paths", "--outDir", outDir], {
         stdio: "ignore", // Suppress initial tsc-alias output
         shell: true,
         env: process.env,
@@ -55,7 +57,7 @@ export const devCommand = new Command("dev")
     // logger.info(`Initial build complete. Starting watch mode...`);
 
     // 3. Start tsc in watch mode, pipe stdout to intercept completion message
-    const tscProcess = spawn("npx", ["tsc", "--watch", "--preserveWatchOutput"], {
+    const tscProcess = spawn("npx", ["tsc", "--watch", "--preserveWatchOutput", "--outDir", outDir], {
       stdio: ["inherit", "pipe", "inherit"],
       shell: true,
       env: process.env,
@@ -109,7 +111,7 @@ export const devCommand = new Command("dev")
         isRestarting = true;
         
         // logger.info("Resolving aliases...");
-        const aliasProcess = spawn("npx", ["tsc-alias", "--resolve-full-paths"], {
+        const aliasProcess = spawn("npx", ["tsc-alias", "--resolve-full-paths", "--outDir", outDir], {
           stdio: "ignore", // Suppress output
           shell: true,
           env: process.env,

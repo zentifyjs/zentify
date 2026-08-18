@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "@zentify/react/components";
+import { getEnv } from "@zentify/react/utils";
 import "../index.css";
 
 export default function Index({ title, user }: { title: string; user: string }) {
@@ -7,6 +8,7 @@ export default function Index({ title, user }: { title: string; user: string }) 
     <div className="app-wrapper">
       <div className="container">
         <span className="badge">Zentify Framework v1.0</span>
+        <span>{getEnv("FRONTEND_TEST_API")}</span>
         <h1>{title}</h1>
         <p>
           Welcome aboard, <strong>{user}</strong>! You are viewing a Server-Side initial load, completely hydrated by React & Vite on the client.

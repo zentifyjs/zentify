@@ -18,11 +18,17 @@ export class HomeController{
     
     @Get("/")
     async index(){
-        return render("Index", { title: "Zentify + React + Vite 🚀", user: "Zentify" });
+        return render("Index", { title: "Hii broo, Welcome to Zentify + React + Vite 🚀", user: "Zentify" });
     }
 
     @Get("/about")
     async about(){
-        return render("About", { title: "Tentang Kami", version: "1.0" });
+        const info = this.homeService.getConfigInfo();
+        return render("About", { title: "Tentang Kami", version: "1.0", ...info });
+    }
+
+    @Get("/api/config")
+    async config(){
+        return this.homeService.getConfigInfo();
     }
 }

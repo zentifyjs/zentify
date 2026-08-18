@@ -15,4 +15,11 @@ export type AppContext = {
   config?: {
     loaders?: ConfigLoader[];
   };
+
+  routes?: {
+    /** Route module path, resolved from the configured output dir (zentify.json `outDir`), e.g. "app/Routes/web.js". */
+    web?: string;
+    /** API route module path, resolved from the configured output dir (zentify.json `outDir`), e.g. "app/Routes/api.js". */
+    api?: string;
+  };
 };

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, render } from "@zentify/core";
+import { Body, Controller, Get, Post } from "@zentify/core";
 import { HomeService } from "../Services/HomeService.js";
 import { HomeDTO } from "./dto/HomeDTO.js";
 
@@ -18,11 +18,16 @@ export class HomeController{
     
     @Get("/")
     async index(){
-        return { title: "Zentify + React + Vite 🚀", user: "Zentify" }
+        return { title: "Hii broo, Welcome to Zentify 🚀", user: "Zentify", ...this.homeService.getConfigInfo() }
     }
 
     @Get("/about")
     async about(){
-        return { title: "Tentang Kami", version: "1.0" }
+        return { title: "Tentang Kami", version: "1.0", ...this.homeService.getConfigInfo() }
+    }
+
+    @Get("/api/config")
+    async config(){
+        return this.homeService.getConfigInfo()
     }
 }

@@ -11,6 +11,7 @@ import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { LifecycleManager } from "./lifecycle/manager";
 import { ConfigAdapter } from "./adapters/config/adapter";
+import { resolveOutDir } from "./utils/zentify-config";
 import serveStatic from "serve-static";
 
 export class Zentify {
@@ -42,10 +43,11 @@ export class Zentify {
   }
 
   private async runSeeder(seederClass: string) {
+    const outDir = resolveOutDir();
     try {
       const possiblePaths = [
         path.join(process.cwd(), ".zentify", "app", "Database", "seeders", `${seederClass}.js`),
-        path.join(process.cwd(), "dist", "app", "Database", "seeders", `${seederClass}.js`),
+        path.join(process.cwd(), outDir, "app", "Database", "seeders", `${seederClass}.js`),
         path.join(process.cwd(), "app", "Database", "seeders", `${seederClass}.ts`)
       ];
 
@@ -87,6 +89,7 @@ export class Zentify {
   }
 
   async run() {
+    await Route.importRoutes(this.context.routes, resolveOutDir());
     await this.lifecycle.boot();
     Route.setContainer(this.container);
     Route.resolveModules(this.adapters);

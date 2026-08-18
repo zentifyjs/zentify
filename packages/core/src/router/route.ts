@@ -3,10 +3,13 @@ import { getParameterMetadata } from "../decorators/metadata";
 import type { Container } from "../depedencies";
 import type { ControllerClass, ControllerHandler, FunctionHandler, HandlerFunction, HttpMethod, ModuleClass, ModuleMiddleware, Routes } from "../types";
 import { Middleware } from "../types/middleware";
+import { Logger } from "../utils";
 import { normalizePath } from "../utils/route";
 import { matchMiddlewarePath, matchRoute } from "./matcher";
 import { parseQuery } from "./query";
 import { RouteTable } from "./route_table";
+import * as path from "node:path";
+import { pathToFileURL } from "node:url";
 
 
 
@@ -29,6 +32,66 @@ export class Route {
 
   public static setContainer(container: Container) {
     this.container = container;
+  }
+
+  private static logger = new Logger({ context: "Route" });
+
+  public static async importRoutes(
+    routes?: { web?: string; api?: string },
+    outDir: string = "dist",
+  ): Promise<void> {
+    const specs = [routes?.web, routes?.api].filter((r): r is string => !!r);
+    for (const spec of specs) {
+      await this.importRouteFile(spec, outDir);
+    }
+  }
+
+  private static buildRouteCandidates(spec: string, outDir: string): string[] {
+    if (spec.includes("://") || spec.startsWith("file:")) return [spec];
+
+    if (/^(@[^/]+\/)?[^./][^/]*$/.test(spec)) return [spec];
+
+    const ext = path.extname(spec);
+    const exts = ext ? [".js", ".mjs", ".cjs", ".ts", ".mts", ".tsx"] : [".js", ".ts", ".mjs"];
+
+    const candidates: string[] = [];
+    const add = (rel: string) => {
+      const base = path.resolve(process.cwd(), rel);
+      candidates.push(base);
+      if (ext) {
+        const stem = base.slice(0, -ext.length);
+        for (const e of exts) if (e !== ext) candidates.push(stem + e);
+      } else {
+        for (const e of exts) candidates.push(base + e);
+      }
+    };
+
+    add(path.join(outDir, spec));
+    add(spec);
+
+    return [...new Set(candidates)];
+  }
+
+  private static async importRouteFile(spec: string, outDir: string): Promise<void> {
+    for (const candidate of this.buildRouteCandidates(spec, outDir)) {
+      try {
+        const dynamicImport = new Function("p", "return import(p)");
+        await dynamicImport(pathToFileURL(candidate).href);
+        this.logger.info(`Loaded route file: ${candidate}`);
+        return;
+      } catch (e: any) {
+        if (
+          e.code !== "ERR_MODULE_NOT_FOUND" &&
+          e.code !== "ERR_UNKNOWN_FILE_EXTENSION" &&
+          !e.message?.includes("Cannot find module") &&
+          !e.message?.includes("Failed to load url") &&
+          !e.message?.includes("Unknown file extension")
+        ) {
+          throw e;
+        }
+      }
+    }
+    this.logger.warn(`Route file "${spec}" not found.`);
   }
 
   private static getPrefix(): string {

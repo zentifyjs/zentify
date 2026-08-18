@@ -3,6 +3,7 @@ import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { Logger } from "../../utils";
+import { resolveOutDir } from "../../utils/zentify-config";
 
 export const buildCommand = new Command("build")
   .description("Build the Zentify application for production")
@@ -10,13 +11,14 @@ export const buildCommand = new Command("build")
     const logger = new Logger({
       context: "build"
     })
+    const outDir = resolveOutDir();
     logger.info(`Building application...`);
     
     // Step 1: Build Backend with tsc
     logger.info(`Compiling backend with tsc...`);
     
     try {
-      const tscProcess = spawn("npx", ["tsc"], {
+      const tscProcess = spawn("npx", ["tsc", "--outDir", outDir], {
         stdio: "inherit",
         shell: true,
         env: process.env,
@@ -30,7 +32,7 @@ export const buildCommand = new Command("build")
       });
       
       logger.info(`Resolving extensionless imports with tsc-alias...`);
-      const aliasProcess = spawn("npx", ["tsc-alias", "--resolve-full-paths"], {
+      const aliasProcess = spawn("npx", ["tsc-alias", "--resolve-full-paths", "--outDir", outDir], {
         stdio: "inherit",
         shell: true,
         env: process.env,
@@ -97,6 +99,7 @@ export const buildCommand = new Command("build")
                 `    ...base,`,
                 `    envPrefix: ["VITE_", "FRONTEND_"],`,
                 `    ssr: { noExternal: ["@zentify/react"] },`,
+                `    build: { ...(base.build || {}), outDir: "${outDir.replace(/\\/g, "/")}/public" },`,
                 `    define: { ...(base.define || {}), ...ConfigService.getFrontendEnvs(), __ZENTIFY_FRONTEND_ENV__: JSON.stringify(ConfigService.getFrontendEnvMap()) },`,
                 `  };`,
                 `});`,
@@ -128,7 +131,7 @@ export const buildCommand = new Command("build")
           // Step 3: Server Build (for SSR) — reuse the same override config so
           // define/envPrefix (FRONTEND_*) and ssr.noExternal apply to the SSR bundle too.
           const ssrConfigFlag = viteConfigPath ? ["--config", ".zentify/vite.config.override.mjs"] : [];
-          const ssrProcess = spawn("npx", ["vite", "build", "--ssr", "app/Views/main.tsx", "--outDir", "dist/server", ...ssrConfigFlag], {
+          const ssrProcess = spawn("npx", ["vite", "build", "--ssr", "app/Views/main.tsx", "--outDir", path.join(outDir, "server"), ...ssrConfigFlag], {
             stdio: "inherit",
             shell: true,
             env: {

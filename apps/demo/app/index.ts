@@ -2,11 +2,11 @@
 import { Route, Zentify, render } from "@zentify/core";
 import { ZentifyViteAdapter } from "@zentify/vite"
 import { ZentifyTypeOrmAdapter } from "@zentify/typeorm";
-
-import "./Routes/web"
 import { AppConfig } from "./Config/AppConfig.js";
 
-const app = new Zentify();
+const app = new Zentify({
+  routes: { web: "app/Routes/web.js" },
+});
 
 app.addAdapter({
   dependency: [AppConfig],
@@ -25,12 +25,8 @@ app.addAdapter({
 });
 
 // Daftarkan View Engine
-app.addAdapter(new ZentifyViteAdapter({
-  mode: "ssr",
-  manifestPath: "dist/public/.vite/manifest.json",
-  entry: "app/Views/main.tsx"
-}))
+app.addAdapter(new ZentifyViteAdapter())
 
-app.useStatic("dist/public");
+app.useStatic("build/public");
 
 app.run();
