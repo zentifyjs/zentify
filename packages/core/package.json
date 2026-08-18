@@ -51,6 +51,6 @@
     "picocolors": "^1.1.1",
     "reflect-metadata": "^0.2.2",
     "serve-static": "^2.2.1",
-    "valibot": "^0.42.1"
+    "valibot": "^1.4.2"
   }
 }
