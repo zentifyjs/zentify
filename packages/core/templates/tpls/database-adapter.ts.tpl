@@ -8,8 +8,6 @@ app.addAdapter({
       username: config.dbUsername,
       password: config.dbPassword,
       database: config.dbName,
-      entities: ["./Models/**/*.{ts,js}"],
-      synchronize: true,
     });
   },
 });
