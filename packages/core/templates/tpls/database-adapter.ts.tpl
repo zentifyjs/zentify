@@ -2,7 +2,7 @@ app.addAdapter({
   dependency: [AppConfig],
   useFactory: (config: AppConfig) => {
     return new ZentifyTypeOrmAdapter({
-      type: config.dbType,
+      type: config.dbType as any,
       host: config.dbHost,
       port: config.dbPort,
       username: config.dbUsername,
