@@ -1,4 +1,4 @@
-import type { InjectionToken } from "../depedencies/container";
+import type { InjectionToken } from "../dependencies/container";
 import { Zentify } from "../zentify";
 import { ZentifyViewEngine } from "../view";
 

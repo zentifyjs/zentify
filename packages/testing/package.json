@@ -1,0 +1,36 @@
+{
+  "name": "@zentify/testing",
+  "version": "1.1.0-rc-8",
+  "description": "Testing utilities for Zentify",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --clean && tsc --emitDeclarationOnly",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "files": [
+    "dist"
+  ],
+  "dependencies": {
+    "@zentify/core": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "reflect-metadata": "^0.2.2",
+    "typescript": "^7.0.2",
+    "unplugin-swc": "^1.5.11",
+    "valibot": "^1.4.2",
+    "vitest": "^4.1.10"
+  },
+  "license": "ISC"
+}

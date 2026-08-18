@@ -2,7 +2,7 @@ import Busboy from "busboy";
 import { HttpException } from "../exception/http";
 import { ZRequest } from "../types/message";
 import { BodyParser, MultipartParserResult, ZFile } from "./body_parser";
-import { MultipartFile } from "./mutlipart_file";
+import { MultipartFile } from "./multipart_file";
 
 type FileWaiter = {
   resolve: (file: ZFile) => void;

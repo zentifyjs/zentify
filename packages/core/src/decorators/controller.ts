@@ -1,4 +1,4 @@
-import { buildDependencyGraph } from "../depedencies";
+import { buildDependencyGraph } from "../dependencies";
 
 const controllerMetadata = new WeakMap<Function, { path: string, constructorDeps: any }>();
 

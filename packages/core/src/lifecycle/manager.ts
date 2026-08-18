@@ -45,15 +45,11 @@ export class LifecycleManager {
     }
   }
 
-  async shutdown(signal?: string) {
+  async close(): Promise<void> {
     if (this.isShuttingDown) return;
     this.isShuttingDown = true;
-    
-    if (signal) {
-      this.logger.warn(`Received ${signal}. Shutting down gracefully...`);
-    } else {
-      this.logger.info(`Shutting down gracefully...`);
-    }
+
+    this.logger.info(`Shutting down gracefully...`);
 
     // Eksekusi semua custom shutdown hooks (misal: stop HTTP server)
     for (const hook of this.shutdownHooks) {
@@ -73,8 +69,15 @@ export class LifecycleManager {
         }
       }
     }
-    
+
     this.logger.info("Application closed.");
+  }
+
+  async shutdown(signal?: string) {
+    if (signal) {
+      this.logger.warn(`Received ${signal}. Shutting down gracefully...`);
+    }
+    await this.close();
     process.exit(0);
   }
 }

@@ -44,7 +44,6 @@ export class MultipartFile implements ZFile {
     for await (const chunk of this.readable) {
       const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
 
-      this.size += buffer.length;
       chunks.push(buffer);
     }
 

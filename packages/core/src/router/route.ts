@@ -1,6 +1,6 @@
 import { getControllerMetadata, getModuleMetadata, getRouteMetadata } from "../decorators";
 import { getParameterMetadata } from "../decorators/metadata";
-import type { Container } from "../depedencies";
+import type { Container } from "../dependencies";
 import type { ControllerClass, ControllerHandler, FunctionHandler, HandlerFunction, HttpMethod, ModuleClass, ModuleMiddleware, Routes } from "../types";
 import { Middleware } from "../types/middleware";
 import { Logger } from "../utils";
@@ -32,6 +32,17 @@ export class Route {
 
   public static setContainer(container: Container) {
     this.container = container;
+  }
+
+  public static reset(): void {
+    this.routes = [];
+    this.globalMiddleware = [];
+    this.prefixStack = [];
+    this.groupMiddlewareStack = [];
+    this.moduleMiddlewareStack = [];
+    this.routeTable = new RouteTable();
+    this.registeredModules = [];
+    this.container = undefined as any;
   }
 
   private static logger = new Logger({ context: "Route" });

@@ -37,44 +37,55 @@ export class HttpServer {
 
   private serverInstance?: ReturnType<typeof createServer>;
 
-  public start(): void {
+  private boundPort?: number;
+
+  public async start(): Promise<number> {
     const appContext = this.appContext;
     const port = appContext.server?.port ?? Number(ConfigService.get("PORT", "3000"));
     const host = appContext.server?.host || "localhost";
 
-    this.serverInstance = createServer(async (nodeReq, nodeRes) => {
-      const req = await enhanceRequest(nodeReq, this.appContext);
-      const res = enhanceResponse(nodeRes);
+    return new Promise<number>((resolve) => {
+      this.serverInstance = createServer(async (nodeReq, nodeRes) => {
+        const req = await enhanceRequest(nodeReq, this.appContext);
+        const res = enhanceResponse(nodeRes);
 
-      for (const adapter of this.adapters) {
-        const globalMiddleware = adapter.getGlobalMiddleware?.();
-        if (globalMiddleware) {
-          const proceed = await new Promise<boolean>((resolve, reject) => {
-            nodeRes.once('finish', () => resolve(false));
-            nodeRes.once('close', () => resolve(false));
-            
-            globalMiddleware(nodeReq, nodeRes, (err: any) => {
-              if (err) return reject(err);
-              resolve(true);
+        for (const adapter of this.adapters) {
+          const globalMiddleware = adapter.getGlobalMiddleware?.();
+          if (globalMiddleware) {
+            const proceed = await new Promise<boolean>((resolve, reject) => {
+              nodeRes.once('finish', () => resolve(false));
+              nodeRes.once('close', () => resolve(false));
+
+              globalMiddleware(nodeReq, nodeRes, (err: any) => {
+                if (err) return reject(err);
+                resolve(true);
+              });
             });
-          });
 
-          if (!proceed) {
-            return; // Request handled by adapter middleware, stop execution
+            if (!proceed) {
+              return; // Request handled by adapter middleware, stop execution
+            }
           }
         }
-      }
 
-      await this.dispatcher.dispatch(req, res, this.staticHandler);
-    });
+        await this.dispatcher.dispatch(req, res, this.staticHandler);
+      });
 
-    this.serverInstance.listen(port, host, () => {
-      const isProd = process.env.NODE_ENV === "production";
-      const mode = isProd ? "Production" : "Development";
-      const urls = getNetworkAddresses(port);
-      this.logger.info(`Server running in ${mode} mode.`);
-      urls.forEach((url) => {
-        this.logger.info(`> ${url}`);
+      this.serverInstance.listen(port, host, () => {
+        const address = this.serverInstance?.address();
+        const boundPort =
+          address && typeof address === "object" ? address.port : port;
+        this.boundPort = boundPort;
+
+        const isProd = process.env.NODE_ENV === "production";
+        const mode = isProd ? "Production" : "Development";
+        const urls = getNetworkAddresses(boundPort);
+        this.logger.info(`Server running in ${mode} mode.`);
+        urls.forEach((url) => {
+          this.logger.info(`> ${url}`);
+        });
+
+        resolve(boundPort);
       });
     });
   }

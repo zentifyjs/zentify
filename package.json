@@ -6,11 +6,13 @@
     "apps/*"
   ],
   "scripts": {
+    "test:core":"npm test -w @zentify/core",
     "build:core": "npm run build -w @zentify/core",
     "build:vite": "npm run build -w @zentify/vite",
     "build:react": "npm run build -w @zentify/react",
     "build:typeorm": "npm run build -w @zentify/typeorm",
-    "build:all": "npm run build:core && npm run build:react && npm run build:vite && npm run build:typeorm",
+    "build:testing": "npm run build -w @zentify/testing",
+    "build:all": "npm run build:core && npm run build:react && npm run build:vite && npm run build:typeorm && npm run build:testing",
     "publish:all": "npm run build:all && npm publish --workspaces --access public",
     "bump": "node scripts/bump-version.mjs"
   },

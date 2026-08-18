@@ -6,7 +6,7 @@ import { AppContext } from "./types/app_context";
 import { Logger } from "./utils";
 import { ZentifyViewEngine } from "./view";
 import { ZentifyAdapter, ZentifyAdapterFactory } from "./types/adapter";
-import { Container } from "./depedencies/container";
+import { Container } from "./dependencies/container";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { LifecycleManager } from "./lifecycle/manager";
@@ -20,6 +20,7 @@ export class Zentify {
   public lifecycle: LifecycleManager;
   private adapters: Array<ZentifyAdapter | ZentifyAdapterFactory> = [];
   private staticHandler?: ReturnType<typeof serveStatic>;
+  private server?: HttpServer;
   private logger = new Logger({
     context: "App",
   });
@@ -122,18 +123,22 @@ export class Zentify {
         `Registered route: [${route.method}] ${route.path} -> ${typeof route.handler === "function" ? "FunctionHandler" : `${route.handler[0].name}.${route.handler[1]}`}`,
       );
     }
-    const server = new HttpServer(this.context, this.adapters as ZentifyAdapter[]);
+    this.server = new HttpServer(this.context, this.adapters as ZentifyAdapter[]);
     this.lifecycle.registerShutdownHook(async () => {
-      if (server) {
-        await server.stop();
+      if (this.server) {
+        await this.server.stop();
       }
     });
-    
+
     if (this.staticHandler) {
-      server.setStaticHandler(this.staticHandler);
+      this.server.setStaticHandler(this.staticHandler);
     }
-    server.registerRoutes(routes);
+    this.server.registerRoutes(routes);
     this.logger.info("Starting server...");
-    server.start();
+    return this.server.start();
+  }
+
+  public async close(): Promise<void> {
+    await this.lifecycle.close();
   }
 }
