@@ -1,0 +1,17 @@
+{
+  "name": "Database (TypeORM)",
+  "description": "Adds TypeORM with entities, migrations and seeders",
+  "kind": "layer",
+  "deps": {
+    "dependencies": {
+      "@zentify/typeorm": "*",
+      "typeorm": "^0.3.0"
+    }
+  },
+  "imports": [
+    "import { ZentifyTypeOrmAdapter } from \"@zentify/typeorm\";",
+    "import { AppConfig } from \"./Config/AppConfig.js\";"
+  ],
+  "bootstrapTpl": "database-adapter.ts.tpl",
+  "marker": "// [[zentify:database]]"
+}

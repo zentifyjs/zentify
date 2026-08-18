@@ -1,0 +1,10 @@
+{
+  "name": "API",
+  "description": "A lightweight Zentify application for REST APIs",
+  "kind": "base",
+  "env": {
+    "APP_NAME": "Zentify API",
+    "PORT": "3003",
+    "FRONTEND_TEST_API": "http://example.com"
+  }
+}

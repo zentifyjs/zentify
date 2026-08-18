@@ -1,14 +1,13 @@
 app.addAdapter({
   dependency: [AppConfig],
   useFactory: (config: AppConfig) => {
-    const url = new URL(config.databaseUrl);
     return new ZentifyTypeOrmAdapter({
-      type: url.protocol.replace(":", ""),
-      host: url.hostname,
-      port: Number(url.port) || 5432,
-      username: url.username,
-      password: url.password,
-      database: url.pathname.slice(1),
+      type: config.dbType,
+      host: config.dbHost,
+      port: config.dbPort,
+      username: config.dbUsername,
+      password: config.dbPassword,
+      database: config.dbName,
       entities: ["./Models/**/*.{ts,js}"],
       synchronize: true,
     });

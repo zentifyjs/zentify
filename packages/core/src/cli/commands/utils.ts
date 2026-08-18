@@ -9,7 +9,9 @@ export function getTemplatesDir(): string {
   while (true) {
     const candidate = path.join(dir, "templates");
     try {
-      if (fsSync.statSync(candidate).isDirectory()) return candidate;
+      // Keep walking until we find the real templates dir (marker: tpls/ subfolder).
+      // Avoids stopping at unrelated folders also named "templates" (e.g. src/cli/templates).
+      if (fsSync.statSync(path.join(candidate, "tpls")).isDirectory()) return candidate;
     } catch {}
     const parent = path.dirname(dir);
     if (parent === dir) {

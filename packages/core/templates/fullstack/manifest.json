@@ -1,4 +1,10 @@
 {
   "name": "Fullstack (React)",
-  "description": "Zentify backend with React + Vite frontend"
+  "description": "Zentify backend with React + Vite frontend",
+  "kind": "base",
+  "base": "api",
+  "layers": ["ui-react"],
+  "env": {
+    "APP_NAME": "Zentify App"
+  }
 }

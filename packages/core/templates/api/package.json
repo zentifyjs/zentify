@@ -1,0 +1,20 @@
+{
+  "name": "demo-app",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "zentify dev",
+    "build": "zentify build",
+    "start": "zentify start"
+  },
+  "dependencies": {
+    "@zentify/core": "*"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.4",
+    "ts-node": "^10.9.2",
+    "tsc-alias": "^1.9.1",
+    "tsx": "^4.19.2",
+    "typescript": "^5.0.0"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "PostgreSQL (Default)",
+  "description": "Use PostgreSQL",
+  "kind": "layer",
+  "group": "database",
+  "priority": 0,
+  "extends": "database",
+  "deps": {
+    "dependencies": {
+      "pg": "^8.23.0"
+    }
+  },
+  "env": {
+    "DB_TYPE": "postgres",
+    "DB_HOST": "localhost",
+    "DB_PORT": "5432",
+    "DB_USERNAME": "postgres",
+    "DB_PASSWORD": "",
+    "DB_DATABASE": "zentify"
+  }
+}
