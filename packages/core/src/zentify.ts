@@ -5,18 +5,19 @@ import { HttpServer } from "./server/http";
 import { AppContext } from "./types/app_context";
 import { Logger } from "./utils";
 import { ZentifyViewEngine } from "./view";
-import { ZentifyAdapter } from "./types/adapter";
+import { ZentifyAdapter, ZentifyAdapterFactory } from "./types/adapter";
 import { Container } from "./depedencies/container";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
 import { LifecycleManager } from "./lifecycle/manager";
+import { ConfigAdapter } from "./adapters/config/adapter";
 import serveStatic from "serve-static";
 
 export class Zentify {
   public context: AppContext = {};
   public container = new Container();
   public lifecycle: LifecycleManager;
-  private adapters: ZentifyAdapter[] = [];
+  private adapters: Array<ZentifyAdapter | ZentifyAdapterFactory> = [];
   private staticHandler?: ReturnType<typeof serveStatic>;
   private logger = new Logger({
     context: "App",
@@ -24,10 +25,11 @@ export class Zentify {
   
   constructor(config: AppContext = {}) {
     this.context = config;
+    this.adapters = [new ConfigAdapter({ loaders: config.config?.loaders ?? [] })];
     this.lifecycle = new LifecycleManager(this, this.adapters);
   }
 
-  addAdapter(adapter: ZentifyAdapter) {
+  addAdapter(adapter: ZentifyAdapter | ZentifyAdapterFactory) {
     this.adapters.push(adapter);
   }
 
@@ -92,7 +94,7 @@ export class Zentify {
     if (process.env.ZENTIFY_MIGRATING) {
       const type = process.env.ZENTIFY_MIGRATING;
       try {
-        for (const adapter of this.adapters) {
+        for (const adapter of this.adapters as ZentifyAdapter[]) {
           if (adapter.onMigrate) {
             await adapter.onMigrate(type);
           }
@@ -117,7 +119,7 @@ export class Zentify {
         `Registered route: [${route.method}] ${route.path} -> ${typeof route.handler === "function" ? "FunctionHandler" : `${route.handler[0].name}.${route.handler[1]}`}`,
       );
     }
-    const server = new HttpServer(this.context, this.adapters);
+    const server = new HttpServer(this.context, this.adapters as ZentifyAdapter[]);
     this.lifecycle.registerShutdownHook(async () => {
       if (server) {
         await server.stop();

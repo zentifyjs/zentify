@@ -1,15 +1,15 @@
 import { Zentify } from "../zentify";
-import { ZentifyAdapter } from "../types/adapter";
+import { ZentifyAdapter, ZentifyAdapterFactory } from "../types/adapter";
 import { Logger } from "../utils";
 
 export class LifecycleManager {
   private isShuttingDown = false;
   private logger = new Logger({ context: "LifecycleManager" });
   private app: Zentify;
-  private adapters: ZentifyAdapter[];
+  private adapters: Array<ZentifyAdapter | ZentifyAdapterFactory>;
   private shutdownHooks: Array<() => Promise<void>> = [];
 
-  constructor(app: Zentify, adapters: ZentifyAdapter[]) {
+  constructor(app: Zentify, adapters: Array<ZentifyAdapter | ZentifyAdapterFactory>) {
     this.app = app;
     this.adapters = adapters;
     process.on("SIGINT", () => this.shutdown("SIGINT"));
@@ -20,8 +20,25 @@ export class LifecycleManager {
     this.shutdownHooks.push(hook);
   }
 
+  private materialize(entry: ZentifyAdapter | ZentifyAdapterFactory): ZentifyAdapter {
+    if ("useFactory" in entry) {
+      const { dependency = [], useFactory } = entry;
+      const deps = dependency.map((token) => this.app.container.resolve(token));
+      return useFactory(...deps);
+    }
+    return entry;
+  }
+
   async boot() {
-    for (const adapter of this.adapters) {
+    for (let i = 0; i < this.adapters.length; i++) {
+      const adapter = this.materialize(this.adapters[i]);
+      this.adapters[i] = adapter;
+      if (adapter.onBeforeInit) {
+        await adapter.onBeforeInit(this.app);
+      }
+    }
+
+    for (const adapter of this.adapters as ZentifyAdapter[]) {
       if (adapter.onInit) {
         await adapter.onInit(this.app);
       }
@@ -47,7 +64,7 @@ export class LifecycleManager {
       }
     }
 
-    for (const adapter of this.adapters) {
+    for (const adapter of this.adapters as ZentifyAdapter[]) {
       if (adapter.onClose) {
         try {
           await adapter.onClose(this.app);

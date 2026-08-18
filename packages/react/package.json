@@ -19,10 +19,15 @@
       "types": "./dist/hooks/index.d.ts",
       "import": "./dist/hooks/index.js",
       "require": "./dist/hooks/index.cjs"
+    },
+    "./utils": {
+      "types": "./dist/utils/index.d.ts",
+      "import": "./dist/utils/index.js",
+      "require": "./dist/utils/index.cjs"
     }
   },
   "scripts": {
-    "build": "tsup src/index.tsx src/components/index.ts src/hooks/index.ts --format cjs,esm --clean && tsc --emitDeclarationOnly"
+    "build": "tsup src/index.tsx src/components/index.ts src/hooks/index.ts src/utils/index.ts --format cjs,esm --clean && tsc --emitDeclarationOnly"
   },
   "files": [
     "dist"

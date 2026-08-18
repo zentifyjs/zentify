@@ -1,6 +1,7 @@
 import { createServer } from "node:http";
 import { enhanceRequest, enhanceResponse } from "./message";
 import { AppContext } from "../types/app_context";
+import { ConfigService } from "../adapters/config/config.service";
 import { getNetworkAddresses, Logger } from "../utils";
 import { Routes } from "../types";
 import { ZentifyAdapter } from "../types/adapter";
@@ -38,7 +39,7 @@ export class HttpServer {
 
   public start(): void {
     const appContext = this.appContext;
-    const port = appContext.server?.port || 3000;
+    const port = appContext.server?.port ?? Number(ConfigService.get("PORT", "3000"));
     const host = appContext.server?.host || "localhost";
 
     this.serverInstance = createServer(async (nodeReq, nodeRes) => {

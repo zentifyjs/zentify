@@ -1,11 +1,23 @@
 import * as fs from "node:fs/promises";
+import * as fsSync from "node:fs";
 import * as path from "node:path";
-import { fileURLToPath } from "node:url";
 import pc from "picocolors";
 import { Logger } from "../../utils";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+export function getTemplatesDir(): string {
+  let dir = __dirname;
+  while (true) {
+    const candidate = path.join(dir, "templates");
+    try {
+      if (fsSync.statSync(candidate).isDirectory()) return candidate;
+    } catch {}
+    const parent = path.dirname(dir);
+    if (parent === dir) {
+      throw new Error("Templates directory not found");
+    }
+    dir = parent;
+  }
+}
 
 export async function generateFileFromTemplate(
   templateName: string,
@@ -14,7 +26,7 @@ export async function generateFileFromTemplate(
 ) {
   const logger = new Logger({context: "utils"})
   try {
-    const templatePath = path.resolve(__dirname, `../../templates/tpls/${templateName}`);
+    const templatePath = path.join(getTemplatesDir(), "tpls", templateName);
     let content = await fs.readFile(templatePath, "utf-8");
 
     for (const [key, value] of Object.entries(replacements)) {

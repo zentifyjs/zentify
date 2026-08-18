@@ -1,3 +1,5 @@
+import { ConfigService } from "../adapters/config/config.service";
+
 export type InjectionToken = string | symbol | Function | any;
 
 export interface ClassProvider {
@@ -86,6 +88,7 @@ export class Container {
     });
 
     const instance = new (target as any)(...resolvedDeps);
+    ConfigService.applyEnvironment(target, instance);
     return instance;
   }
 }

@@ -65,12 +65,51 @@ export const buildCommand = new Command("build")
         }
       }
       
-      const viteConfigExists = fs.existsSync(path.join(process.cwd(), "vite.config.ts")) || 
-                               fs.existsSync(path.join(process.cwd(), "vite.config.js"));
+      const viteConfigCandidates = ["vite.config.ts", "vite.config.js", "vite.config.mjs"];
+      const viteConfigPath = viteConfigCandidates
+        .map((f) => path.join(process.cwd(), f))
+        .find((p) => fs.existsSync(p));
+
+      const viteConfigExists = Boolean(viteConfigPath);
                                
       if (hasVite || viteConfigExists) {
         logger.info(`Vite detected. Building frontend assets...`);
-        const viteProcess = spawn("npx", ["vite", "build"], {
+
+        // Auto-inject FRONTEND_* envs (via ConfigService) by generating a config override.
+        // The developer does NOT need to write define/ConfigService inside their vite.config.ts.
+        const viteArgs = ["vite", "build"];
+        if (viteConfigPath) {
+          try {
+            const overrideDir = path.join(process.cwd(), ".zentify");
+            fs.mkdirSync(overrideDir, { recursive: true });
+            const overridePath = path.join(overrideDir, "vite.config.override.mjs");
+            const basePath = viteConfigPath.replace(/\\/g, "/");
+            fs.writeFileSync(
+              overridePath,
+              [
+                `import { defineConfig } from "vite";`,
+                `import { ConfigService } from "@zentify/core";`,
+                `import baseConfig from "${basePath}";`,
+                ``,
+                `export default defineConfig(async (env) => {`,
+                `  const base = typeof baseConfig === "function" ? await baseConfig(env) : baseConfig;`,
+                `  return {`,
+                `    ...base,`,
+                `    envPrefix: ["VITE_", "FRONTEND_"],`,
+                `    ssr: { noExternal: ["@zentify/react"] },`,
+                `    define: { ...(base.define || {}), ...ConfigService.getFrontendEnvs(), __ZENTIFY_FRONTEND_ENV__: JSON.stringify(ConfigService.getFrontendEnvMap()) },`,
+                `  };`,
+                `});`,
+                ``,
+              ].join("\n"),
+            );
+            viteArgs.push("--config", ".zentify/vite.config.override.mjs");
+          } catch (e: any) {
+            logger.warn(`Could not generate vite config override: ${e.message}`);
+          }
+        }
+
+        const viteProcess = spawn("npx", viteArgs, {
           stdio: "inherit",
           shell: true,
           env: {
@@ -86,8 +125,10 @@ export const buildCommand = new Command("build")
           }
           
           logger.info(`Vite client build complete. Starting SSR build...`);
-          // Step 3: Server Build (for SSR)
-          const ssrProcess = spawn("npx", ["vite", "build", "--ssr", "app/Views/main.tsx", "--outDir", "dist/server"], {
+          // Step 3: Server Build (for SSR) — reuse the same override config so
+          // define/envPrefix (FRONTEND_*) and ssr.noExternal apply to the SSR bundle too.
+          const ssrConfigFlag = viteConfigPath ? ["--config", ".zentify/vite.config.override.mjs"] : [];
+          const ssrProcess = spawn("npx", ["vite", "build", "--ssr", "app/Views/main.tsx", "--outDir", "dist/server", ...ssrConfigFlag], {
             stdio: "inherit",
             shell: true,
             env: {

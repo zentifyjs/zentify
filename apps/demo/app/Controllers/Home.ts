@@ -26,6 +26,12 @@ export class HomeController{
 
     @Get("/about")
     async about(){
-        return render("About", { title: "Tentang Kami", version: "1.0" });
+        const info = this.homeService.getConfigInfo();
+        return render("About", { title: "Tentang Kami", version: "1.0", ...info });
+    }
+
+    @Get("/api/config")
+    async config(){
+        return this.homeService.getConfigInfo();
     }
 }

@@ -1,4 +1,4 @@
-import { ZentifyViewEngine, ZentifyAdapter, Zentify, ZRequest, ZResponse, Logger } from "@zentify/core";
+import { ZentifyViewEngine, ZentifyAdapter, Zentify, ZRequest, ZResponse, Logger, ConfigService } from "@zentify/core";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as url from "node:url";
@@ -34,6 +34,10 @@ export interface ZentifyViteOptions {
    * Default: true
    */
   reactRefresh?: boolean;
+  /**
+   * Extra `define` values merged into Vite (applied on top of FRONTEND_* envs).
+   */
+  define?: Record<string, string>;
 }
 
 const defaultHtmlShell = `
@@ -76,6 +80,13 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
         this.viteDevServer = await createServer({
           server: { middlewareMode: true },
           appType: 'custom',
+          envPrefix: ["VITE_", "FRONTEND_"],
+          ssr: { noExternal: ["@zentify/react"] },
+          define: {
+            ...this.options.define,
+            ...ConfigService.getFrontendEnvs(),
+            __ZENTIFY_FRONTEND_ENV__: JSON.stringify(ConfigService.getFrontendEnvMap()),
+          },
         });
         this.logger.info("Vite dev server initialized in middleware mode.");
       } catch (error) {

@@ -4,23 +4,25 @@ import { ZentifyViteAdapter } from "@zentify/vite"
 import { ZentifyTypeOrmAdapter } from "@zentify/typeorm";
 
 import "./Routes/web"
+import { AppConfig } from "./Config/AppConfig.js";
 
-const app = new Zentify({
-  server: { port: 3003 },
+const app = new Zentify();
+
+app.addAdapter({
+  dependency: [AppConfig],
+  useFactory: (config: AppConfig) => {
+    return new ZentifyTypeOrmAdapter({
+      type: "postgres",
+      host: config.dbHost,
+      port: config.dbPort,
+      username: config.dbUsername,
+      password: config.dbPassword,
+      database: config.dbName,
+      // entities: ["./Models/**/*.{ts,js}"],
+      // migrations: ["./Database/Migrations/**/*.{ts,js}"]
+    });
+  },
 });
-
-app.addAdapter(
-  new ZentifyTypeOrmAdapter({
-    type: "postgres",
-    host: "localhost",
-    port: 5432,
-    username: "postgres",
-    password: "",
-    database: "zentify",
-    // entities: ["./Models/**/*.{ts,js}"],
-    // migrations: ["./Database/Migrations/**/*.{ts,js}"]
-  })
-);
 
 // Daftarkan View Engine
 app.addAdapter(new ZentifyViteAdapter({

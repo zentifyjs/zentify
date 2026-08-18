@@ -1,13 +1,10 @@
 import { Command } from "commander";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import { fileURLToPath } from "node:url";
 import pc from "picocolors";
 import { select } from "@inquirer/prompts";
 import { Logger } from "../../utils";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { getTemplatesDir } from "./utils.js";
 
 export const makeApp = new Command("new")
   .description("Create a new Zentify application")
@@ -15,7 +12,7 @@ export const makeApp = new Command("new")
   .action(async (name: string) => {
     const logger = new Logger({context: "make:app"})
     try {
-      const templatesDir = path.resolve(__dirname, `../../templates`);
+      const templatesDir = getTemplatesDir();
       const templateFolders = await fs.readdir(templatesDir, { withFileTypes: true });
 
       const templateChoices = [];

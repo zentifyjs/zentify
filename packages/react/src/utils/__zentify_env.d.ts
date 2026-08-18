@@ -1,0 +1,1 @@
+declare var __ZENTIFY_FRONTEND_ENV__: Record<string, string> | undefined;
