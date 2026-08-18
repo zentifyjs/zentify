@@ -229,17 +229,23 @@ export async function materialize(
     await fs.writeFile(path.join(targetDir, ".env.example"), envContent, "utf-8");
   }
 
-  if (tpl.imports.length > 0 || tpl.injections.length > 0) {
-    const indexPath = path.join(targetDir, "app/index.ts");
-    let content = await fs.readFile(indexPath, "utf-8");
-    content = prependImports(content, tpl.imports);
+  const indexPath = path.join(targetDir, "app/index.ts");
+  let content = await fs.readFile(indexPath, "utf-8");
+  content = prependImports(content, tpl.imports);
 
-    for (const injection of tpl.injections) {
-      content = injectAtMarker(content, injection.marker, injection.code);
-    }
-
-    await fs.writeFile(indexPath, content, "utf-8");
+  for (const injection of tpl.injections) {
+    content = injectAtMarker(content, injection.marker, injection.code);
   }
+
+  // Strip any marker placeholders that were never used by a layer,
+  // then collapse leftover blank lines.
+  content = content
+    .split("\n")
+    .filter((line) => !line.trim().startsWith("// [[zentify:"))
+    .join("\n")
+    .replace(/\n{3,}/g, "\n\n");
+
+  await fs.writeFile(indexPath, content, "utf-8");
 }
 
 async function readBootstrapTpl(tplName: string): Promise<string> {

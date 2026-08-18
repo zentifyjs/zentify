@@ -1,5 +1,5 @@
 {
-  "name": "PostgreSQL (Default)",
+  "name": "PostgreSQL",
   "description": "Use PostgreSQL",
   "kind": "layer",
   "group": "database",
