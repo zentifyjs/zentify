@@ -26,6 +26,10 @@ export class MultipartFile implements ZFile {
     });
 
     this.readable = readable.pipe(counter);
+    // The busboy error handler in MultipartParser already rejects the
+    // pending file waiters; avoid crashing on the unhandled stream error.
+    readable.on("error", () => {});
+    this.readable.on("error", () => {});
   }
 
   public stream(): Readable {

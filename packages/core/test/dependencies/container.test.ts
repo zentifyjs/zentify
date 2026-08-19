@@ -100,6 +100,81 @@ describe("Container", () => {
     expect(container.resolve(Leaf)).toBeInstanceOf(Leaf);
   });
 
+  it("returns undefined for providers without a recognizable shape", () => {
+    const container = new Container();
+    container.provide({ token: "shapeless", foo: 1 } as any);
+
+    expect(container.resolve("shapeless")).toBeUndefined();
+  });
+
+  it("has reports providers and resolved instances", () => {
+    const container = new Container();
+    container.provide(Leaf);
+
+    expect(container.has(Leaf)).toBe(true);
+    container.resolve(Leaf);
+    expect(container.has(Leaf)).toBe(true);
+    expect(container.has(NotProvided)).toBe(false);
+  });
+
+  it("throws for unresolvable non-function tokens", () => {
+    const container = new Container();
+    expect(() => container.resolve("missing-token")).toThrow(
+      /Cannot resolve dependency for token: missing-token/,
+    );
+  });
+
+  it("throws a descriptive error when a param type is unusable", () => {
+    class BrokenDep {
+      constructor(public value: number) {}
+    }
+    Reflect.defineMetadata("design:paramtypes", [42], BrokenDep);
+
+    const container = new Container();
+    expect(() => container.resolve(BrokenDep)).toThrow(/Cannot resolve dependency/);
+    expect(() => container.resolve(BrokenDep)).toThrow(/at index 0/);
+  });
+
+  it("labels symbol tokens in circular chain messages", () => {
+    const SYM_TOKEN = Symbol("SYM_TOKEN");
+
+    class UsesSym {
+      constructor(public value: unknown) {}
+    }
+    class NeedsUsesSym {
+      constructor(public usesSym: unknown) {}
+    }
+
+    Reflect.defineMetadata("design:paramtypes", [SYM_TOKEN], UsesSym);
+    Reflect.defineMetadata("design:paramtypes", [UsesSym], NeedsUsesSym);
+
+    const container = new Container();
+    container.provide({ token: SYM_TOKEN, useClass: NeedsUsesSym });
+
+    expect(() => container.resolve(UsesSym)).toThrow(/Circular dependency detected/);
+  });
+
+  it("labels anonymous function tokens in circular chain messages", () => {
+    const anonToken = Object.defineProperty(function () {}, "name", { value: "" });
+
+    class UsesAnon {
+      constructor(public value: unknown) {}
+    }
+    class NeedsUsesAnon {
+      constructor(public usesAnon: unknown) {}
+    }
+
+    Reflect.defineMetadata("design:paramtypes", [anonToken], UsesAnon);
+    Reflect.defineMetadata("design:paramtypes", [UsesAnon], NeedsUsesAnon);
+
+    const container = new Container();
+    container.provide({ token: anonToken, useClass: NeedsUsesAnon });
+
+    expect(() => container.resolve(UsesAnon)).toThrow(
+      /Circular dependency detected/,
+    );
+  });
+
   it("resolves custom @Inject tokens", () => {
     const container = new Container();
     container.provide({ token: VALUE_TOKEN, useValue: "injected-value" });

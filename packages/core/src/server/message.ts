@@ -50,10 +50,6 @@ export async function enhanceRequest(
   return request;
 }
 
-async function parseParams(req: ZRequest) {
-  const url = new URL(req.url ?? "", `http://${req.headers.host}`);
-}
-
 async function parseBody(req: ZRequest): Promise<unknown> {
   const request = req as ZRequest;
 

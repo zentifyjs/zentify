@@ -79,4 +79,19 @@ describe("RouteTable", () => {
 
     expect(table.all()).toHaveLength(2);
   });
+
+  it("swallows finder errors for static routes (invalid method)", () => {
+    const table = new RouteTable();
+    expect(() => table.add(route("FOO", "/static-invalid"))).not.toThrow();
+    expect(table.all()).toHaveLength(1);
+  });
+
+  it("stores a noop handler for dynamic routes", () => {
+    const table = new RouteTable();
+    table.add(route("GET", "/users/:id"));
+
+    const hit = (table as any).finder.find("GET", "/users/x");
+    expect(typeof hit?.handler).toBe("function");
+    expect(hit?.handler()).toBeUndefined();
+  });
 });

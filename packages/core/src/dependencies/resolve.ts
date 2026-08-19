@@ -47,28 +47,40 @@ export function buildDependencyGraph(
 
 export const instanceCache = new Map<Function, any>();
 
+const constructing = new Set<Function>();
+
 export function construct<T>(target: any, providers: Function[] | Set<Function> = []): T {
     if (instanceCache.has(target)) {
         return instanceCache.get(target);
     }
 
+    if (constructing.has(target)) {
+        throw new Error(`Circular dependency detected: ${target.name}`);
+    }
+
     const providerSet = providers instanceof Set ? providers : new Set(providers);
 
-    const deps = getReflectParamsType(target);
-    const resolvedDeps = deps.map(dep => {
-        if (typeof dep !== "function") {
-            throw new Error(`Cannot resolve dependency of ${target.name}`);
-        }
+    constructing.add(target);
 
-        if (!providerSet.has(dep)) {
-            throw new Error(`Dependency ${dep.name} of ${target.name} is not provided in the Module`);
-        }
+    try {
+        const deps = getReflectParamsType(target);
+        const resolvedDeps = deps.map(dep => {
+            if (typeof dep !== "function") {
+                throw new Error(`Cannot resolve dependency of ${target.name}`);
+            }
 
-        return construct(dep, providerSet);
-    });
+            if (!providerSet.has(dep)) {
+                throw new Error(`Dependency ${dep.name} of ${target.name} is not provided in the Module`);
+            }
 
-    const instance = new target(...resolvedDeps);
-    instanceCache.set(target, instance);
+            return construct(dep, providerSet);
+        });
 
-    return instance;
+        const instance = new target(...resolvedDeps);
+        instanceCache.set(target, instance);
+
+        return instance;
+    } finally {
+        constructing.delete(target);
+    }
 }

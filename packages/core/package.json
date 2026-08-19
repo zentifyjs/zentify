@@ -38,6 +38,7 @@
     "@types/busboy": "^1.5.4",
     "@types/node": "^26.2.0",
     "@types/serve-static": "^2.2.0",
+    "@vitest/coverage-v8": "^4.1.10",
     "concurrently": "^10.0.4",
     "tsx": "^4.23.11",
     "typescript": "^7.0.2",

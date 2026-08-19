@@ -22,6 +22,7 @@ export type Provider = ClassProvider | ValueProvider | FactoryProvider | Functio
 export class Container {
   private instances = new Map<InjectionToken, any>();
   private providers = new Map<InjectionToken, ClassProvider | ValueProvider | FactoryProvider>();
+  private resolvingStack: InjectionToken[] = [];
 
   provide(provider: Provider) {
     if (typeof provider === "function") {
@@ -40,36 +41,50 @@ export class Container {
       return this.instances.get(token);
     }
 
-    const provider = this.providers.get(token);
+    const cycleFrom = this.resolvingStack.indexOf(token);
+    if (cycleFrom !== -1) {
+      const chain = [...this.resolvingStack.slice(cycleFrom), token]
+        .map(tokenLabel)
+        .join(" -> ");
+      throw new Error(`Circular dependency detected: ${chain}`);
+    }
 
-    if (!provider) {
-      if (typeof token === "function") {
-        if (allowedProviders && !allowedProviders.has(token)) {
-          throw new Error(`Dependency ${token.name} is not provided in the Module`);
+    this.resolvingStack.push(token);
+
+    try {
+      const provider = this.providers.get(token);
+
+      if (!provider) {
+        if (typeof token === "function") {
+          if (allowedProviders && !allowedProviders.has(token)) {
+            throw new Error(`Dependency ${token.name} is not provided in the Module`);
+          }
+          const instance = this.resolveClass(token, allowedProviders);
+          this.instances.set(token, instance);
+          return instance;
         }
-        const instance = this.resolveClass(token, allowedProviders);
-        this.instances.set(token, instance);
-        return instance;
+        throw new Error(`Cannot resolve dependency for token: ${String(token)}`);
       }
-      throw new Error(`Cannot resolve dependency for token: ${String(token)}`);
+
+      if (allowedProviders && !allowedProviders.has(token)) {
+        throw new Error(`Dependency ${String(token)} is not provided in the Module`);
+      }
+
+      let instance: any;
+
+      if ("useValue" in provider) {
+        instance = provider.useValue;
+      } else if ("useFactory" in provider) {
+        instance = provider.useFactory(this);
+      } else if ("useClass" in provider) {
+        instance = this.resolveClass(provider.useClass, allowedProviders);
+      }
+
+      this.instances.set(token, instance);
+      return instance;
+    } finally {
+      this.resolvingStack.pop();
     }
-
-    if (allowedProviders && !allowedProviders.has(token)) {
-      throw new Error(`Dependency ${String(token)} is not provided in the Module`);
-    }
-
-    let instance: any;
-
-    if ("useValue" in provider) {
-      instance = provider.useValue;
-    } else if ("useFactory" in provider) {
-      instance = provider.useFactory(this);
-    } else if ("useClass" in provider) {
-      instance = this.resolveClass(provider.useClass, allowedProviders);
-    }
-
-    this.instances.set(token, instance);
-    return instance;
   }
 
   private resolveClass(target: Function, allowedProviders?: Set<InjectionToken>): any {
@@ -91,4 +106,11 @@ export class Container {
     ConfigService.applyEnvironment(target, instance);
     return instance;
   }
+}
+
+function tokenLabel(token: InjectionToken): string {
+  if (typeof token === "function") {
+    return token.name || "(anonymous)";
+  }
+  return String(token);
 }

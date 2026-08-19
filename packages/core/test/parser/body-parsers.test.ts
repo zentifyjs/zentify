@@ -19,6 +19,12 @@ function makeRequest(body: Buffer | string, method = "POST") {
 describe("JsonBodyParser", () => {
   const parser = new JsonBodyParser(1024);
 
+  it("supports application/json content types", () => {
+    expect(parser.supports("application/json")).toBe(true);
+    expect(parser.supports("Application/JSON; charset=utf-8")).toBe(true);
+    expect(parser.supports("text/plain")).toBe(false);
+  });
+
   it("parses a valid JSON body", async () => {
     const result = await parser.parse(makeRequest('{"name":"raja","age":25}'));
     expect(result).toEqual({ name: "raja", age: 25 });
@@ -39,6 +45,12 @@ describe("JsonBodyParser", () => {
 describe("UrlEncodedBodyParser", () => {
   const parser = new UrlEncodedBodyParser(1024);
 
+  it("supports x-www-form-urlencoded content types", () => {
+    expect(parser.supports("application/x-www-form-urlencoded")).toBe(true);
+    expect(parser.supports("application/x-www-form-urlencoded; charset=utf-8")).toBe(true);
+    expect(parser.supports("application/json")).toBe(false);
+  });
+
   it("parses url-encoded fields", async () => {
     const result = await parser.parse(
       makeRequest("name=raja&role=admin"),
@@ -54,6 +66,12 @@ describe("UrlEncodedBodyParser", () => {
 describe("TextBodyParser", () => {
   const parser = new TextBodyParser(1024);
 
+  it("supports text/plain content types", () => {
+    expect(parser.supports("text/plain")).toBe(true);
+    expect(parser.supports("text/plain; charset=utf-8")).toBe(true);
+    expect(parser.supports("application/json")).toBe(false);
+  });
+
   it("returns the raw string body", async () => {
     expect(await parser.parse(makeRequest("hello world"))).toBe("hello world");
   });
@@ -62,6 +80,12 @@ describe("TextBodyParser", () => {
 describe("readBody", () => {
   it("concatenates chunks in order", async () => {
     const stream = Readable.from([Buffer.from("ab"), Buffer.from("cd")]);
+    const buffer = await readBody(stream as any, 1024);
+    expect(buffer.toString()).toBe("abcd");
+  });
+
+  it("normalizes non-Buffer string chunks", async () => {
+    const stream = Readable.from(["ab", "cd"]);
     const buffer = await readBody(stream as any, 1024);
     expect(buffer.toString()).toBe("abcd");
   });

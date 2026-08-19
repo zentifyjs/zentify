@@ -86,8 +86,10 @@ export class Route {
   private static async importRouteFile(spec: string, outDir: string): Promise<void> {
     for (const candidate of this.buildRouteCandidates(spec, outDir)) {
       try {
-        const dynamicImport = new Function("p", "return import(p)");
-        await dynamicImport(pathToFileURL(candidate).href);
+        const url = candidate.includes("://") || candidate.startsWith("file:")
+          ? candidate
+          : pathToFileURL(candidate).href;
+        await import(url);
         this.logger.info(`Loaded route file: ${candidate}`);
         return;
       } catch (e: any) {
@@ -118,7 +120,7 @@ export class Route {
   }
 
   public static hasRoute(method: HttpMethod, path: string): boolean {
-    return this.routes.some(
+    return this.routeTable.all().some(
       (route) => route.method === method && route.path === path,
     );
   }

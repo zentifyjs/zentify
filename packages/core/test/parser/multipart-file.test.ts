@@ -15,6 +15,16 @@ function makeFile(contents: string): MultipartFile {
   );
 }
 
+function makeFileFromStrings(chunks: string[]): MultipartFile {
+  return new MultipartFile(
+    "data",
+    "photo.png",
+    "image/png",
+    "7bit",
+    Readable.from(chunks) as any,
+  );
+}
+
 describe("MultipartFile", () => {
   it("exposes metadata", () => {
     const file = makeFile("x");
@@ -32,6 +42,15 @@ describe("MultipartFile", () => {
     expect(file.size).toBe(5);
   });
 
+  it("normalizes non-Buffer string chunks in stream and toBuffer", async () => {
+    const file = makeFileFromStrings(["ab", "cd"]);
+
+    expect(file.size).toBe(0);
+    const buffer = await file.toBuffer();
+    expect(buffer.toString()).toBe("abcd");
+    expect(file.size).toBe(4);
+  });
+
   it("throws if the stream is consumed twice", async () => {
     const file = makeFile("hello");
     await file.toBuffer();
@@ -39,6 +58,37 @@ describe("MultipartFile", () => {
     await expect(file.toBuffer()).rejects.toThrow(
       /already been consumed/,
     );
+  });
+
+  it("exposes the underlying stream", async () => {
+    const file = makeFile("stream-data");
+    const stream = file.stream();
+
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    }
+
+    expect(Buffer.concat(chunks).toString()).toBe("stream-data");
+  });
+
+  it("swallows errors emitted on the piped stream", async () => {
+    const file = makeFile("x");
+    const stream = file.stream();
+
+    stream.destroy(new Error("boom"));
+
+    await new Promise((resolve) => setImmediate(resolve));
+    stream.resume();
+  });
+
+  it("does not double-count size on the transform", async () => {
+    const file = makeFileFromStrings(["ab", "cd"]);
+    expect(file.size).toBe(0);
+
+    const stream = file.stream();
+    stream.resume();
+    await new Promise((resolve) => stream.once("end", resolve));
   });
 
   it("save writes the file to disk", async () => {

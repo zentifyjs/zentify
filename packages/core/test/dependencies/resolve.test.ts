@@ -88,4 +88,15 @@ describe("construct", () => {
     const a2 = construct(A, [A]);
     expect(a1).toBe(a2);
   });
+
+  it("throws on a non-function dependency", () => {
+    class HasValueDep {
+      constructor(public readonly value: string) {}
+    }
+    Reflect.defineMetadata("design:paramtypes", [42], HasValueDep);
+
+    expect(() => construct(HasValueDep, [HasValueDep])).toThrow(
+      /Cannot resolve dependency of HasValueDep/,
+    );
+  });
 });
