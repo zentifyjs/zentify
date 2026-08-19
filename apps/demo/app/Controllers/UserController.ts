@@ -12,12 +12,14 @@ import { UserService } from "../Services/UserService.js";
 import { UserDTO } from "./dto/UserDTO.js";
 import { AuthManager } from "@zentify/auth";
 import { User } from "../Models/User.js";
+import { RequestContextService } from "../Services/RequestContextService.js";
 
 @Controller({ path: "/users" })
 export class UserController {
   constructor(
     private readonly userService: UserService,
     private readonly authManager: AuthManager<User>,
+    private readonly ctxService: RequestContextService,
   ) {}
 
   @Post("/login")
@@ -26,7 +28,10 @@ export class UserController {
     const success = await this.authManager.attempt({ email, password });
 
     if (success) {
-      return { message: "Login successful" };
+      return {
+        message: "Login successful",
+        context: this.ctxService.describe(),
+      };
     } else {
       return { message: "Invalid credentials" };
     }
@@ -44,6 +49,16 @@ export class UserController {
     }); // Update the user with the password
 
     return { message: "User registered successfully" };
+  }
+
+  @Get("/me")
+  async me() {
+    const user = await this.authManager.user();
+    if (user) {
+      return { user };
+    } else {
+      return { message: "Not authenticated" };
+    }
   }
 
   @Get("/")

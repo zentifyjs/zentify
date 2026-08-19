@@ -3,6 +3,8 @@ import { Container } from "../../src/dependencies/container";
 import { ConfigService } from "../../src/adapters/config/config.service";
 import { Env } from "../../src/decorators/config";
 import { Dependency } from "../../src/decorators/dependency";
+import { Inject } from "../../src/decorators/inject";
+import { CTX, HttpContext } from "../../src/utils/http-context";
 
 @Dependency()
 class Leaf {
@@ -274,6 +276,43 @@ describe("Container provideGlobal", () => {
     expect(() => container.resolve(AnonymousService, allowed)).toThrow(
       /Dependency \(anonymous\) is not provided in the Module/,
     );
+  });
+});
+
+describe("Container request context", () => {
+  const fakeReq = { method: "POST", url: "/test", headers: {} } as any;
+  const fakeRes = { appendHeader: () => {} } as any;
+  const fakeCtx = { req: fakeReq, res: fakeRes };
+
+  @Dependency()
+  class UsesCtx {
+    constructor(@Inject(CTX) public readonly ctx: unknown) {}
+  }
+
+  it("resolves CTX to the active request context", () => {
+    HttpContext.run(fakeCtx, () => {
+      const container = new Container();
+      const ctx = container.resolve(CTX) as any;
+
+      expect(ctx.req).toBe(fakeReq);
+      expect(ctx.res).toBe(fakeRes);
+    });
+  });
+
+  it("injects CTX via @Inject custom token within a request", () => {
+    HttpContext.run(fakeCtx, () => {
+      const container = new Container();
+      const instance = container.resolve(UsesCtx) as any;
+
+      expect(instance.ctx.req).toBe(fakeReq);
+    });
+  });
+
+  it("lazily proxies CTX and throws only on access outside a request", () => {
+    const container = new Container();
+    const ctx = container.resolve(CTX) as any;
+
+    expect(() => ctx.req).toThrow(/No active HTTP request context/);
   });
 });
 

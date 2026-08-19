@@ -7,22 +7,32 @@ import { Routes } from "../types";
 import { ZentifyAdapter } from "../types/adapter";
 import { ResponseHandler } from "./response";
 import { RequestDispatcher } from "./dispatcher";
+import { Container } from "../dependencies";
+import { REQUEST_CONTEXT } from "../constants";
+import { ZentifyHttpContextService } from "../adapters";
 
 export class HttpServer {
   private logger = new Logger({ context: "HttpServer" });
   private appContext: AppContext = {};
+  private container: Container;
   private adapters: ZentifyAdapter[] = [];
   private staticHandler?: any;
-  
+
   private responseHandler: ResponseHandler;
   private dispatcher: RequestDispatcher;
   private onShutdown?: () => Promise<void>;
 
-  constructor(appContext: AppContext = {}, adapters: ZentifyAdapter[] = [], onShutdown?: () => Promise<void>) {
+  constructor(
+    container: Container,
+    appContext: AppContext = {},
+    adapters: ZentifyAdapter[] = [],
+    onShutdown?: () => Promise<void>,
+  ) {
     this.appContext = appContext;
     this.adapters = adapters;
+    this.container = container;
     this.onShutdown = onShutdown;
-    
+
     this.responseHandler = new ResponseHandler(this.adapters);
     this.dispatcher = new RequestDispatcher(this.responseHandler);
   }
@@ -41,34 +51,38 @@ export class HttpServer {
 
   public async start(): Promise<number> {
     const appContext = this.appContext;
-    const port = appContext.server?.port ?? Number(ConfigService.get("PORT", "3000"));
+    const port =
+      appContext.server?.port ?? Number(ConfigService.get("PORT", "3000"));
     const host = appContext.server?.host || "localhost";
 
     return new Promise<number>((resolve) => {
       this.serverInstance = createServer(async (nodeReq, nodeRes) => {
         const req = await enhanceRequest(nodeReq, this.appContext);
         const res = enhanceResponse(nodeRes);
+        const requestContextService: ZentifyHttpContextService =
+          this.container.resolve(REQUEST_CONTEXT);
+        await requestContextService.run({ req, res }, async () => {
+          for (const adapter of this.adapters) {
+            const globalMiddleware = adapter.getGlobalMiddleware?.();
+            if (globalMiddleware) {
+              const proceed = await new Promise<boolean>((resolve, reject) => {
+                nodeRes.once("finish", () => resolve(false));
+                nodeRes.once("close", () => resolve(false));
 
-        for (const adapter of this.adapters) {
-          const globalMiddleware = adapter.getGlobalMiddleware?.();
-          if (globalMiddleware) {
-            const proceed = await new Promise<boolean>((resolve, reject) => {
-              nodeRes.once('finish', () => resolve(false));
-              nodeRes.once('close', () => resolve(false));
-
-              globalMiddleware(nodeReq, nodeRes, (err: any) => {
-                if (err) return reject(err);
-                resolve(true);
+                globalMiddleware(nodeReq, nodeRes, (err: any) => {
+                  if (err) return reject(err);
+                  resolve(true);
+                });
               });
-            });
 
-            if (!proceed) {
-              return; // Request handled by adapter middleware, stop execution
+              if (!proceed) {
+                return; // Request handled by adapter middleware, stop execution
+              }
             }
           }
-        }
 
-        await this.dispatcher.dispatch(req, res, this.staticHandler);
+          await this.dispatcher.dispatch(req, res, this.staticHandler);
+        });
       });
 
       this.serverInstance.listen(port, host, () => {

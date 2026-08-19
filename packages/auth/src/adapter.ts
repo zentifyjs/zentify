@@ -19,9 +19,10 @@ export interface ZentifyAuthAdapterOptions {
 
 function getSessionGuard(
   type: "session" | "jwt",
+  app: Zentify,
 ): SessionGuard<Authenticatable> {
   if (type === "session") {
-    return new SessionGuard(new MemorySessionStore(), new AuthCookieImpl());
+    return new SessionGuard(new MemorySessionStore(), new AuthCookieImpl(app));
   } else {
     throw new Error("JWT guard not implemented yet");
   }
@@ -50,7 +51,7 @@ export class ZentifyAuthAdapter implements ZentifyAdapter {
 
     const authManager = new AuthManager(
       repo,
-      getSessionGuard(this.options.resultType || "session"),
+      getSessionGuard(this.options.resultType || "session", app),
       getPasswordHasher(this.options.passwordHasher || "bcrypt"),
     );
 

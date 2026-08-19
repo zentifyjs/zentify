@@ -1,6 +1,7 @@
+import { Zentify } from "@zentify/core";
+
 export interface AuthCookie {
   get(name: string): string | undefined;
-
   set(
     name: string,
     value: string,

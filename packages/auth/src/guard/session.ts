@@ -9,7 +9,7 @@ export class SessionGuard<T extends Authenticatable> implements AuthGuard<T> {
     private readonly cookies: AuthCookie,
   ) {}
 
-  async login(user: T): Promise<void> {
+  async login(user: T, lookup: Record<string, unknown>): Promise<void> {
     const sessionId = await this.sessions.create();
 
     await this.sessions.set(
@@ -17,6 +17,7 @@ export class SessionGuard<T extends Authenticatable> implements AuthGuard<T> {
       "auth.identifier",
       user.getAuthIdentifier(),
     );
+    await this.sessions.set(sessionId, "auth.lookup", lookup);
 
     this.cookies.set("session", sessionId, {
       httpOnly: true,
@@ -26,14 +27,30 @@ export class SessionGuard<T extends Authenticatable> implements AuthGuard<T> {
     });
   }
 
-  async getIdentifier(): Promise<string | null> {
+  async getIdentifier(): Promise<{
+    identifier: string;
+    lookup: Record<string, unknown>;
+  } | null> {
     const sessionId = this.cookies.get("session");
-
     if (!sessionId) {
       return null;
     }
+    const identifier = await this.sessions.get<string>(
+      sessionId,
+      "auth.identifier",
+    );
+    const lookup = await this.sessions.get<Record<string, unknown>>(
+      sessionId,
+      "auth.lookup",
+    );
+    if (!identifier || !lookup) {
+      return null;
+    }
 
-    return this.sessions.get<string>(sessionId, "auth.identifier");
+    return {
+      identifier: identifier,
+      lookup: lookup,
+    };
   }
 
   async logout(): Promise<void> {

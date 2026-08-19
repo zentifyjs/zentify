@@ -27,7 +27,7 @@ export class AuthManager<T extends Authenticatable> {
       return false;
     }
 
-    await this.guard.login(user);
+    await this.guard.login(user, lookup);
 
     return true;
   }
@@ -39,7 +39,7 @@ export class AuthManager<T extends Authenticatable> {
       return null;
     }
 
-    return this.repository.findById(identifier);
+    return this.repository.findByCredentials(identifier.lookup);
   }
 
   async hashPassword(password: string): Promise<string> {

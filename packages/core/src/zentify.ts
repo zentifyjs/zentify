@@ -17,6 +17,7 @@ import { LifecycleManager } from "./lifecycle/manager";
 import { ConfigAdapter } from "./adapters/config/adapter";
 import { resolveOutDir } from "./utils/zentify-config";
 import serveStatic from "serve-static";
+import { ZentifyHttpContextAdapter } from "./adapters/http_context";
 
 export class Zentify {
   public context: AppContext = {};
@@ -37,6 +38,7 @@ export class Zentify {
     this.context = config;
     this.adapters = [
       new ConfigAdapter({ loaders: config.config?.loaders ?? [] }),
+      new ZentifyHttpContextAdapter(),
     ];
     this.lifecycle = new LifecycleManager(this, this.adapters);
   }
@@ -180,6 +182,7 @@ export class Zentify {
       );
     }
     this.server = new HttpServer(
+      this.container,
       this.context,
       this.adapters as ZentifyAdapter[],
     );

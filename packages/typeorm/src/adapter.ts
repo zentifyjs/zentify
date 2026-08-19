@@ -1,4 +1,5 @@
 import { DataSource, DataSourceOptions } from "typeorm";
+import { TypeOrmAuthRepository } from "./auth_repository";
 import {
   Route,
   getModuleMetadata,
@@ -8,7 +9,6 @@ import {
   ZentifyAdapterKind,
 } from "@zentify/core";
 import * as path from "path";
-import { TypeOrmAuthRepository } from "./auth_repository";
 
 export class ZentifyTypeOrmAdapter implements ZentifyAdapter {
   public readonly name = "TypeOrmAdapter";
@@ -73,7 +73,7 @@ export class ZentifyTypeOrmAdapter implements ZentifyAdapter {
     if (authRepo) {
       app.container.provide({
         token: "AUTH_REPOSITORY",
-        useValue: new TypeOrmAuthRepository<any>(
+        useValue: new TypeOrmAuthRepository(
           this.dataSource.getRepository(authRepo),
         ),
       });

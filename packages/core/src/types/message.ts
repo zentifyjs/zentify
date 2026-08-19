@@ -18,3 +18,8 @@ export interface ZResponse extends ServerResponse {
   json(data: unknown): void;
   body?: unknown;
 }
+
+export interface ZHttpContext {
+  req: ZRequest;
+  res: ZResponse;
+}

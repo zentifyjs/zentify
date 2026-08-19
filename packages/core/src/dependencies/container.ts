@@ -17,11 +17,18 @@ export interface FactoryProvider {
   useFactory: (container: Container) => any;
 }
 
-export type Provider = ClassProvider | ValueProvider | FactoryProvider | Function;
+export type Provider =
+  | ClassProvider
+  | ValueProvider
+  | FactoryProvider
+  | Function;
 
 export class Container {
   private instances = new Map<InjectionToken, any>();
-  private providers = new Map<InjectionToken, ClassProvider | ValueProvider | FactoryProvider>();
+  private providers = new Map<
+    InjectionToken,
+    ClassProvider | ValueProvider | FactoryProvider
+  >();
   private globalTokens = new Set<InjectionToken>();
   private resolvingStack: InjectionToken[] = [];
 
@@ -77,17 +84,23 @@ export class Container {
       if (!provider) {
         if (typeof token === "function") {
           if (!this.isAllowedForModule(token, allowedProviders)) {
-            throw new Error(`Dependency ${tokenLabel(token)} is not provided in the Module`);
+            throw new Error(
+              `Dependency ${tokenLabel(token)} is not provided in the Module`,
+            );
           }
           const instance = this.resolveClass(token, allowedProviders);
           this.instances.set(token, instance);
           return instance;
         }
-        throw new Error(`Cannot resolve dependency for token: ${String(token)}`);
+        throw new Error(
+          `Cannot resolve dependency for token: ${String(token)}`,
+        );
       }
 
       if (!this.isAllowedForModule(token, allowedProviders)) {
-        throw new Error(`Dependency ${tokenLabel(token)} is not provided in the Module`);
+        throw new Error(
+          `Dependency ${tokenLabel(token)} is not provided in the Module`,
+        );
       }
 
       let instance: any;
@@ -107,7 +120,10 @@ export class Container {
     }
   }
 
-  private resolveClass(target: Function, allowedProviders?: Set<InjectionToken>): any {
+  private resolveClass(
+    target: Function,
+    allowedProviders?: Set<InjectionToken>,
+  ): any {
     const deps = Reflect.getMetadata("design:paramtypes", target) || [];
     const customTokens = Reflect.getMetadata("zentify:inject", target) || {};
 
@@ -115,8 +131,15 @@ export class Container {
       const customToken = customTokens[index];
       const tokenToResolve = customToken !== undefined ? customToken : dep;
 
-      if (tokenToResolve === undefined || (typeof tokenToResolve !== "function" && typeof tokenToResolve !== "string" && typeof tokenToResolve !== "symbol")) {
-        throw new Error(`Cannot resolve dependency of ${target.name} at index ${index}. Did you forget a decorator or provider?`);
+      if (
+        tokenToResolve === undefined ||
+        (typeof tokenToResolve !== "function" &&
+          typeof tokenToResolve !== "string" &&
+          typeof tokenToResolve !== "symbol")
+      ) {
+        throw new Error(
+          `Cannot resolve dependency of ${target.name} at index ${index}. Did you forget a decorator or provider?`,
+        );
       }
 
       return this.resolve(tokenToResolve, allowedProviders);
