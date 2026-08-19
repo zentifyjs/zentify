@@ -1,4 +1,13 @@
-import { ZentifyViewEngine, ZentifyAdapter, Zentify, ZRequest, ZResponse, Logger, ConfigService, resolveOutDir } from "@zentify/core";
+import {
+  ZentifyViewEngine,
+  ZentifyAdapter,
+  Zentify,
+  ZRequest,
+  ZResponse,
+  Logger,
+  ConfigService,
+  resolveOutDir,
+} from "@zentify/core";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
 import * as url from "node:url";
@@ -20,8 +29,8 @@ export interface ZentifyViteOptions {
    */
   isDev?: boolean;
   /**
-   * HTML shell to render. 
-   * This should contain `<div id="zentify-app" data-page="..."></div>` 
+   * HTML shell to render.
+   * This should contain `<div id="zentify-app" data-page="..."></div>`
    * and `<zentify-vite-scripts />` where the scripts will be injected.
    */
   htmlShell?: string;
@@ -59,19 +68,21 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
   name = "ZentifyViteAdapter";
   private options: ZentifyViteOptions;
   private viteDevServer?: ViteDevServer;
-  private logger: Logger = new Logger({context: "ViteAdapter"})
-  
+  private logger: Logger = new Logger({ context: "ViteAdapter" });
+
   constructor(options?: ZentifyViteOptions) {
     this.options = {
-      mode: options?.mode || "csr",
+      mode: options?.mode || "ssr",
       entry: "app/Views/main.tsx",
-      isDev: options?.isDev !== undefined ? options?.isDev : process.env.NODE_ENV !== "production",
+      isDev:
+        options?.isDev !== undefined
+          ? options?.isDev
+          : process.env.NODE_ENV !== "production",
       htmlShell: defaultHtmlShell,
       reactRefresh: true,
       manifestPath: `./${resolveOutDir()}/public/.vite/manifest.json`,
       ...options,
     };
-
   }
 
   async onInit(app: Zentify) {
@@ -80,18 +91,23 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
         const { createServer } = await import("vite");
         this.viteDevServer = await createServer({
           server: { middlewareMode: true },
-          appType: 'custom',
+          appType: "custom",
           envPrefix: ["VITE_", "FRONTEND_"],
           ssr: { noExternal: ["@zentify/react"] },
           define: {
             ...this.options.define,
             ...ConfigService.getFrontendEnvs(),
-            __ZENTIFY_FRONTEND_ENV__: JSON.stringify(ConfigService.getFrontendEnvMap()),
+            __ZENTIFY_FRONTEND_ENV__: JSON.stringify(
+              ConfigService.getFrontendEnvMap(),
+            ),
           },
         });
         this.logger.info("Vite dev server initialized in middleware mode.");
       } catch (error) {
-        this.logger.error("Failed to initialize Vite in middleware mode.", error);
+        this.logger.error(
+          "Failed to initialize Vite in middleware mode.",
+          error,
+        );
       }
     }
   }
@@ -104,7 +120,12 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
     return this;
   }
 
-  async render(page: string, props: Record<string, any>, req: ZRequest, res: ZResponse): Promise<void> {
+  async render(
+    page: string,
+    props: Record<string, any>,
+    req: ZRequest,
+    res: ZResponse,
+  ): Promise<void> {
     try {
       const isBridgeRequest = req.headers["x-zentify-bridge"] === "true";
 
@@ -117,7 +138,7 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
 
       // First Load: Send HTML Shell
       let html = this.options.htmlShell || defaultHtmlShell;
-      
+
       // Inject scripts
       let scripts = "";
       if (this.options.isDev) {
@@ -132,7 +153,7 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
             </script>
           `;
         }
-        
+
         scripts += `
           <script type="module" src="/@vite/client"></script>
           <script type="module" src="/${this.options.entry}"></script>
@@ -141,7 +162,10 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
         // In production, we'd read the manifest.json and inject the hashed assets
         if (this.options.manifestPath) {
           try {
-            const manifestContent = await fs.readFile(this.options.manifestPath, "utf-8");
+            const manifestContent = await fs.readFile(
+              this.options.manifestPath,
+              "utf-8",
+            );
             const manifest = JSON.parse(manifestContent);
             const entryChunk = manifest[this.options.entry];
             if (entryChunk && entryChunk.file) {
@@ -159,12 +183,15 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
       }
 
       html = html.replace("<zentify-vite-scripts />", scripts);
-      
+
       // Apply Vite HTML transformations if in dev mode
       if (this.viteDevServer) {
-        html = await this.viteDevServer.transformIndexHtml(req.url || '/', html);
+        html = await this.viteDevServer.transformIndexHtml(
+          req.url || "/",
+          html,
+        );
       }
-      
+
       let appHtml = "";
       if (this.options.mode === "ssr") {
         try {
@@ -173,20 +200,36 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
           } else {
             // Load production server bundle using manifest to handle hashed filenames
             const outDir = resolveOutDir();
-            const serverManifestPath = path.resolve(process.cwd(), outDir, "server", ".vite", "manifest.json");
-            const manifestContent = await fs.readFile(serverManifestPath, "utf-8");
+            const serverManifestPath = path.resolve(
+              process.cwd(),
+              outDir,
+              "server",
+              ".vite",
+              "manifest.json",
+            );
+            const manifestContent = await fs.readFile(
+              serverManifestPath,
+              "utf-8",
+            );
             const manifest = JSON.parse(manifestContent);
             const entryChunk = manifest[this.options.entry];
-            
+
             if (!entryChunk || !entryChunk.file) {
-              throw new Error(`Could not find SSR entry '${this.options.entry}' in server manifest`);
+              throw new Error(
+                `Could not find SSR entry '${this.options.entry}' in server manifest`,
+              );
             }
-            
-            const serverBundlePath = path.resolve(process.cwd(), outDir, "server", entryChunk.file);
+
+            const serverBundlePath = path.resolve(
+              process.cwd(),
+              outDir,
+              "server",
+              entryChunk.file,
+            );
             const fileUrl = url.pathToFileURL(serverBundlePath).href;
             await import(fileUrl);
           }
-          
+
           const ssr = (globalThis as any).__ZENTIFY_SSR__;
           if (ssr && ssr.render) {
             appHtml = await ssr.render({ component: page, props });
@@ -195,14 +238,13 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
           this.logger.error("SSR Error:", error);
         }
       }
-      
+
       // Inject appHtml into the shell
       html = html.replace(
-        /<div id="zentify-app"([^>]*)><\/div>/, 
-        `<div id="zentify-app"$1>${appHtml}</div>`
+        /<div id="zentify-app"([^>]*)><\/div>/,
+        `<div id="zentify-app"$1>${appHtml}</div>`,
       );
 
-      
       // Inject initial data payload safely (escape quotes and script tags)
       const payload = JSON.stringify({ component: page, props })
         .replace(/&/g, "&amp;")
@@ -210,7 +252,7 @@ export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
         .replace(/>/g, "&gt;")
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#39;");
-        
+
       html = html.replace("'{zentify-data}'", `"${payload}"`);
 
       res.setHeader("Content-Type", "text/html; charset=utf-8");
