@@ -7,6 +7,7 @@ import {
   Logger,
   ConfigService,
   resolveOutDir,
+  ZentifyAdapterKind,
 } from "@zentify/core";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
@@ -66,6 +67,7 @@ const defaultHtmlShell = `
 
 export class ZentifyViteAdapter implements ZentifyAdapter, ZentifyViewEngine {
   name = "ZentifyViteAdapter";
+  kind: ZentifyAdapterKind = "view";
   private options: ZentifyViteOptions;
   private viteDevServer?: ViteDevServer;
   private logger: Logger = new Logger({ context: "ViteAdapter" });

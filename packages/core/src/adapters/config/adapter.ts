@@ -1,6 +1,6 @@
 import { ConfigService } from "./config.service";
 import type { ConfigLoader } from "./types";
-import type { ZentifyAdapter } from "../../types/adapter";
+import type { ZentifyAdapter, ZentifyAdapterKind } from "../../types/adapter";
 import type { Zentify } from "../../zentify";
 import { Logger } from "../../utils/logger";
 
@@ -10,6 +10,7 @@ export interface ConfigAdapterOptions {
 
 export class ConfigAdapter implements ZentifyAdapter {
   name = "ConfigAdapter";
+  kind: ZentifyAdapterKind = "common";
   private logger = new Logger({ context: "ConfigAdapter" });
   private options: ConfigAdapterOptions;
 

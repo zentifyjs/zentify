@@ -2,8 +2,18 @@ import type { InjectionToken } from "../dependencies/container";
 import { Zentify } from "../zentify";
 import { ZentifyViewEngine } from "../view";
 
+export type ZentifyAdapterKind = "database" | "view" | "common" | "other";
+
 export interface ZentifyAdapter {
   name: string;
+  kind: ZentifyAdapterKind;
+
+  /**
+   * Names of other adapters whose onInit must complete before this
+   * adapter's onInit runs. Adapters are boot-ordered by these dependencies,
+   * regardless of registration order.
+   */
+  dependsOn?: string[];
 
   /**
    * Lifecycle hook called in LifecycleManager.boot(), BEFORE onInit.
@@ -16,18 +26,21 @@ export interface ZentifyAdapter {
    * Useful for initializing programmatic servers like Vite.
    */
   onInit?(app: Zentify): Promise<void> | void;
-  
+
   /**
    * Lifecycle hook called when a module is resolved.
    * Useful for registering module-scoped dependencies like ORM entities.
    */
-  onModuleResolve?(moduleMetadata: any, providerSet: Set<any>, container: any): void;
+  onModuleResolve?(
+    moduleMetadata: any,
+    providerSet: Set<any>,
+    container: any,
+  ): void;
 
   /**
    * Lifecycle hook called to run database migrations.
    */
   onMigrate?(type: string): Promise<void> | void;
-
 
   /**
    * Lifecycle hook called when the application is closing.
@@ -39,7 +52,7 @@ export interface ZentifyAdapter {
    * that will be executed by HttpServer before Zify Router.
    */
   getGlobalMiddleware?(): any;
-  
+
   /**
    * Returns the view engine implementation if this adapter
    * is responsible for rendering views.

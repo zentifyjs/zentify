@@ -22,6 +22,7 @@ export type Provider = ClassProvider | ValueProvider | FactoryProvider | Functio
 export class Container {
   private instances = new Map<InjectionToken, any>();
   private providers = new Map<InjectionToken, ClassProvider | ValueProvider | FactoryProvider>();
+  private globalTokens = new Set<InjectionToken>();
   private resolvingStack: InjectionToken[] = [];
 
   provide(provider: Provider) {
@@ -32,8 +33,27 @@ export class Container {
     }
   }
 
+  provideGlobal(provider: Provider) {
+    this.provide(provider);
+    const token = typeof provider === "function" ? provider : provider.token;
+    this.globalTokens.add(token);
+  }
+
+  isGlobal(token: InjectionToken): boolean {
+    return this.globalTokens.has(token);
+  }
+
   has(token: InjectionToken): boolean {
     return this.instances.has(token) || this.providers.has(token);
+  }
+
+  private isAllowedForModule(
+    token: InjectionToken,
+    allowedProviders?: Set<InjectionToken>,
+  ): boolean {
+    if (!allowedProviders) return true;
+    if (this.globalTokens.has(token)) return true;
+    return allowedProviders.has(token);
   }
 
   resolve<T>(token: InjectionToken, allowedProviders?: Set<InjectionToken>): T {
@@ -56,8 +76,8 @@ export class Container {
 
       if (!provider) {
         if (typeof token === "function") {
-          if (allowedProviders && !allowedProviders.has(token)) {
-            throw new Error(`Dependency ${token.name} is not provided in the Module`);
+          if (!this.isAllowedForModule(token, allowedProviders)) {
+            throw new Error(`Dependency ${tokenLabel(token)} is not provided in the Module`);
           }
           const instance = this.resolveClass(token, allowedProviders);
           this.instances.set(token, instance);
@@ -66,8 +86,8 @@ export class Container {
         throw new Error(`Cannot resolve dependency for token: ${String(token)}`);
       }
 
-      if (allowedProviders && !allowedProviders.has(token)) {
-        throw new Error(`Dependency ${String(token)} is not provided in the Module`);
+      if (!this.isAllowedForModule(token, allowedProviders)) {
+        throw new Error(`Dependency ${tokenLabel(token)} is not provided in the Module`);
       }
 
       let instance: any;

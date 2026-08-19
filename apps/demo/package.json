@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@zentify/core": "*",
+    "@zentify/auth": "*",
     "@zentify/react": "*",
     "@zentify/typeorm": "*",
     "@zentify/vite": "*",

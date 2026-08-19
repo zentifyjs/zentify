@@ -1,5 +1,6 @@
 import { Zentify } from "../zentify";
 import { ZentifyAdapter, ZentifyAdapterFactory } from "../types/adapter";
+import { orderAdapters } from "./adapter-order";
 import { Logger } from "../utils";
 
 export class LifecycleManager {
@@ -9,7 +10,10 @@ export class LifecycleManager {
   private adapters: Array<ZentifyAdapter | ZentifyAdapterFactory>;
   private shutdownHooks: Array<() => Promise<void>> = [];
 
-  constructor(app: Zentify, adapters: Array<ZentifyAdapter | ZentifyAdapterFactory>) {
+  constructor(
+    app: Zentify,
+    adapters: Array<ZentifyAdapter | ZentifyAdapterFactory>,
+  ) {
     this.app = app;
     this.adapters = adapters;
     process.on("SIGINT", () => this.shutdown("SIGINT"));
@@ -20,7 +24,9 @@ export class LifecycleManager {
     this.shutdownHooks.push(hook);
   }
 
-  private materialize(entry: ZentifyAdapter | ZentifyAdapterFactory): ZentifyAdapter {
+  private materialize(
+    entry: ZentifyAdapter | ZentifyAdapterFactory,
+  ): ZentifyAdapter {
     if ("useFactory" in entry) {
       const { dependency = [], useFactory } = entry;
       const deps = dependency.map((token) => this.app.container.resolve(token));
@@ -38,7 +44,9 @@ export class LifecycleManager {
       }
     }
 
-    for (const adapter of this.adapters as ZentifyAdapter[]) {
+    const ordered = orderAdapters(this.adapters as ZentifyAdapter[]);
+
+    for (const adapter of ordered) {
       if (adapter.onInit) {
         await adapter.onInit(this.app);
       }
@@ -65,7 +73,9 @@ export class LifecycleManager {
         try {
           await adapter.onClose(this.app);
         } catch (e: any) {
-          this.logger.error(`Error closing adapter ${adapter.name}: ${e.message}`);
+          this.logger.error(
+            `Error closing adapter ${adapter.name}: ${e.message}`,
+          );
         }
       }
     }

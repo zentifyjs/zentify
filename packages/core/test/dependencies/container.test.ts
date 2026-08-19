@@ -211,6 +211,72 @@ describe("Container", () => {
   });
 });
 
+describe("Container provideGlobal", () => {
+  it("resolves global value providers outside the module provider set", () => {
+    const container = new Container();
+    container.provideGlobal({ token: VALUE_TOKEN, useValue: "global-value" });
+    const allowed = new Set([Leaf]);
+
+    expect(container.resolve(VALUE_TOKEN, allowed)).toBe("global-value");
+  });
+
+  it("resolves global class providers within a module scope", () => {
+    const container = new Container();
+    container.provideGlobal(Leaf);
+    const allowed = new Set([Branch]);
+
+    expect(container.resolve(Leaf, allowed)).toBeInstanceOf(Leaf);
+  });
+
+  it("resolves global providers through the dependency tree", () => {
+    const container = new Container();
+    container.provideGlobal(Leaf);
+    const allowed = new Set([Branch, Trunk]);
+
+    const trunk = container.resolve(Trunk, allowed);
+    expect(trunk.branch.leaf).toBeInstanceOf(Leaf);
+  });
+
+  it("reports global tokens via isGlobal", () => {
+    const container = new Container();
+    container.provideGlobal(Leaf);
+
+    expect(container.isGlobal(Leaf)).toBe(true);
+    expect(container.isGlobal(Branch)).toBe(false);
+  });
+
+  it("keeps non-global providers restricted to the module scope", () => {
+    const container = new Container();
+    container.provide(Leaf);
+    const allowed = new Set([Branch]);
+
+    expect(() => container.resolve(Leaf, allowed)).toThrow(
+      /not provided in the Module/,
+    );
+  });
+
+  it("labels named classes with their name in module scope errors", () => {
+    const container = new Container();
+    container.provide(Leaf);
+    const allowed = new Set([Branch]);
+
+    expect(() => container.resolve(Leaf, allowed)).toThrow(
+      /Dependency Leaf is not provided in the Module/,
+    );
+  });
+
+  it("labels anonymous classes without dumping their source", () => {
+    const container = new Container();
+    const AnonymousService = (() => class {})();
+    container.provide(AnonymousService);
+    const allowed = new Set([Leaf]);
+
+    expect(() => container.resolve(AnonymousService, allowed)).toThrow(
+      /Dependency \(anonymous\) is not provided in the Module/,
+    );
+  });
+});
+
 describe("Container + Env binding", () => {
   beforeAll(() => {
     process.env.PORT = "8080";

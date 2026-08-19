@@ -5,7 +5,11 @@ import { HttpServer } from "./server/http";
 import { AppContext } from "./types/app_context";
 import { Logger } from "./utils";
 import { ZentifyViewEngine } from "./view";
-import { ZentifyAdapter, ZentifyAdapterFactory } from "./types/adapter";
+import {
+  ZentifyAdapter,
+  ZentifyAdapterFactory,
+  ZentifyAdapterKind,
+} from "./types/adapter";
 import { Container } from "./dependencies/container";
 import * as path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -21,17 +25,39 @@ export class Zentify {
   private adapters: Array<ZentifyAdapter | ZentifyAdapterFactory> = [];
   private staticHandler?: ReturnType<typeof serveStatic>;
   private server?: HttpServer;
+  private allowedManyKinds: Set<ZentifyAdapterKind> = new Set([
+    "other",
+    "common",
+  ]);
   private logger = new Logger({
     context: "App",
   });
-  
+
   constructor(config: AppContext = {}) {
     this.context = config;
-    this.adapters = [new ConfigAdapter({ loaders: config.config?.loaders ?? [] })];
+    this.adapters = [
+      new ConfigAdapter({ loaders: config.config?.loaders ?? [] }),
+    ];
     this.lifecycle = new LifecycleManager(this, this.adapters);
   }
 
   addAdapter(adapter: ZentifyAdapter | ZentifyAdapterFactory) {
+    if ("kind" in adapter && adapter.kind) {
+      const { kind } = adapter;
+
+      this.logger.info(`Adding adapter: ${adapter.name} (kind: ${kind})`);
+
+      const existingAdapter = this.adapters.find(
+        (a) => "kind" in a && a.kind === kind,
+      );
+
+      if (existingAdapter && !this.allowedManyKinds.has(kind)) {
+        throw new Error(
+          `Adapter of kind "${kind}" already exists with name "${(existingAdapter as any).name || "unknown"}". ` +
+            `Only one adapter of each kind is allowed.`,
+        );
+      }
+    }
     this.adapters.push(adapter);
   }
 
@@ -47,37 +73,67 @@ export class Zentify {
     const outDir = resolveOutDir();
     try {
       const possiblePaths = [
-        path.join(process.cwd(), ".zentify", "app", "Database", "seeders", `${seederClass}.js`),
-        path.join(process.cwd(), outDir, "app", "Database", "seeders", `${seederClass}.js`),
-        path.join(process.cwd(), "app", "Database", "seeders", `${seederClass}.ts`)
+        path.join(
+          process.cwd(),
+          ".zentify",
+          "app",
+          "Database",
+          "seeders",
+          `${seederClass}.js`,
+        ),
+        path.join(
+          process.cwd(),
+          outDir,
+          "app",
+          "Database",
+          "seeders",
+          `${seederClass}.js`,
+        ),
+        path.join(
+          process.cwd(),
+          "app",
+          "Database",
+          "seeders",
+          `${seederClass}.ts`,
+        ),
       ];
 
       let loadedModule;
       let actualPath = "";
-      
+
       for (const p of possiblePaths) {
         try {
-          const dynamicImport = new Function('modulePath', 'return import(modulePath)');
+          const dynamicImport = new Function(
+            "modulePath",
+            "return import(modulePath)",
+          );
           loadedModule = await dynamicImport(pathToFileURL(p).href);
           actualPath = p;
           break;
         } catch (e: any) {
-          if (e.code !== 'ERR_MODULE_NOT_FOUND' && !e.message.includes("Cannot find module")) {
-             this.logger.error(`Error loading seeder from ${p}: ${e.message}`);
+          if (
+            e.code !== "ERR_MODULE_NOT_FOUND" &&
+            !e.message.includes("Cannot find module")
+          ) {
+            this.logger.error(`Error loading seeder from ${p}: ${e.message}`);
           }
         }
       }
-      
+
       if (!loadedModule) {
-          throw new Error(`Seeder class ${seederClass} not found in any expected location.`);
+        throw new Error(
+          `Seeder class ${seederClass} not found in any expected location.`,
+        );
       }
 
       const SeederClassRef = loadedModule[seederClass];
-      
+
       if (!SeederClassRef) {
-          throw new Error(`Seeder class ${seederClass} not found in ${actualPath}`);
+        throw new Error(
+          `Seeder class ${seederClass} not found in ${actualPath}`,
+        );
       }
-      
+
       const seederInstance = new SeederClassRef();
       this.logger.info(`Running seeder: ${seederClass}...`);
       await seederInstance.run(this);
@@ -123,7 +179,10 @@ export class Zentify {
         `Registered route: [${route.method}] ${route.path} -> ${typeof route.handler === "function" ? "FunctionHandler" : `${route.handler[0].name}.${route.handler[1]}`}`,
       );
     }
-    this.server = new HttpServer(this.context, this.adapters as ZentifyAdapter[]);
+    this.server = new HttpServer(
+      this.context,
+      this.adapters as ZentifyAdapter[],
+    );
     this.lifecycle.registerShutdownHook(async () => {
       if (this.server) {
         await this.server.stop();
@@ -135,7 +194,9 @@ export class Zentify {
     }
     this.server.registerRoutes(routes);
     this.logger.info("Starting server...");
-    return this.server.start();
+    const server = this.server.start();
+
+    return server;
   }
 
   public async close(): Promise<void> {
