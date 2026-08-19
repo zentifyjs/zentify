@@ -29,7 +29,8 @@ const IGNORE_PATTERNS = [...DEV_ONLY_PATTERNS, ...IGNORED_DIRS];
  * backslash-separated globs on Windows that picomatch never matches. A
  * function-based ignore with fully normalized (posix) paths avoids that.
  */
-const ignore = (relPath: string): boolean => picomatch.isMatch(toPosix(relPath), IGNORE_PATTERNS);
+const ignore = (relPath: string): boolean =>
+  picomatch.isMatch(toPosix(relPath), IGNORE_PATTERNS);
 
 export interface CreateStandaloneOptions {
   /** Absolute path to the application root (where zentify.json lives). */
@@ -146,7 +147,12 @@ function resolvePackageDir(root: string, depName: string): string | null {
   }
 }
 
-function copyPackageIfNeeded(root: string, name: string, targetRoot: string, seen: Set<string>): void {
+function copyPackageIfNeeded(
+  root: string,
+  name: string,
+  targetRoot: string,
+  seen: Set<string>,
+): void {
   if (seen.has(name)) return;
   seen.add(name);
   const target = path.join(targetRoot, name);
@@ -156,11 +162,11 @@ function copyPackageIfNeeded(root: string, name: string, targetRoot: string, see
 
 function serverJsSource(): string {
   return [
-    "import { fileURLToPath } from \"node:url\";",
-    "import { dirname, join } from \"node:path\";",
+    'import { fileURLToPath } from "node:url";',
+    'import { dirname, join } from "node:path";',
     "",
     "// Standalone deployments always run in production mode.",
-    "process.env.NODE_ENV ??= \"production\";",
+    'process.env.NODE_ENV ??= "production";',
     "",
     "const __dirname = dirname(fileURLToPath(import.meta.url));",
     "",
@@ -169,10 +175,10 @@ function serverJsSource(): string {
     "",
     "// The TypeORM adapter resolves entity/migration globs from",
     "// dirname(process.argv[1]); point it at the real entry so globs",
-    "// like \"./Database/migrations/**\" land inside dist/app.",
-    "process.argv[1] = join(__dirname, \"dist/app/index.js\");",
+    '// like "./Database/migrations/**" land inside dist/app.',
+    'process.argv[1] = join(__dirname, "dist/app/index.js");',
     "",
-    "await import(\"./dist/app/index.js\");",
+    'await import("./dist/app/index.js");',
     "",
   ].join("\n");
 }
@@ -182,7 +188,44 @@ export interface CreateStandaloneResult {
   fileCount: number;
 }
 
-export async function createStandalone(opts: CreateStandaloneOptions): Promise<CreateStandaloneResult> {
+/**
+ * Remove every build artifact in the output dir except the standalone folder
+ * itself. After `createStandalone` copies `app`/`public`/`server` into
+ * `standalone/dist`, the original copies are redundant and only add confusion
+ * on deployment. Guards prevent deleting the project root or a filesystem root.
+ */
+export function cleanupOutDir(
+  outDirAbs: string,
+  standaloneDir: string,
+): number {
+  const outResolved = path.resolve(outDirAbs);
+  const standaloneResolved = path.resolve(standaloneDir);
+
+  const rel = path.relative(outResolved, standaloneResolved);
+  if (rel === "" || rel.startsWith("..") || path.isAbsolute(rel)) {
+    throw new Error(
+      `Standalone cleanup aborted: standalone dir "${standaloneResolved}" is not inside "${outResolved}".`,
+    );
+  }
+  if (path.parse(outResolved).root === outResolved) {
+    throw new Error(
+      `Standalone cleanup aborted: refusing to delete filesystem root "${outResolved}".`,
+    );
+  }
+
+  let removed = 0;
+  for (const entry of fs.readdirSync(outResolved, { withFileTypes: true })) {
+    const full = path.join(outResolved, entry.name);
+    if (path.resolve(full) === standaloneResolved) continue;
+    fs.rmSync(full, { recursive: true, force: true });
+    removed++;
+  }
+  return removed;
+}
+
+export async function createStandalone(
+  opts: CreateStandaloneOptions,
+): Promise<CreateStandaloneResult> {
   const { projectRoot, outDir } = opts;
   const logger = opts.logger;
   const base = findTracingBase(projectRoot);
@@ -197,7 +240,9 @@ export async function createStandalone(opts: CreateStandaloneOptions): Promise<C
   const entryRel = path.join(outDir, "app", "index.js");
   const entryAbs = path.join(projectRoot, entryRel);
   if (!fs.existsSync(entryAbs)) {
-    throw new Error(`Standalone build failed: entry not found at "${entryRel}". Run the normal build first.`);
+    throw new Error(
+      `Standalone build failed: entry not found at "${entryRel}". Run the normal build first.`,
+    );
   }
 
   const serverBundles = collectServerBundles(projectRoot, outDir);
@@ -216,15 +261,20 @@ export async function createStandalone(opts: CreateStandaloneOptions): Promise<C
     ignore,
   });
   if (logger && warnings.size > 0) {
-    logger.warn(`${warnings.size} warnings during tracing (ignored resolving optional deps):`);
+    logger.warn(
+      `${warnings.size} warnings during tracing (ignored resolving optional deps):`,
+    );
     for (const w of [...warnings].slice(0, 5)) {
       logger.warn(`  - ${w.message}`);
     }
   }
 
   const projectRootRel = toPosix(path.relative(base, projectRoot));
-  const appOutPrefix = (projectRootRel ? `${projectRootRel}/` : "") + toPosix(outDir) + "/";
-  const projectPkgJsonRel = projectRootRel ? `${projectRootRel}/package.json` : "package.json";
+  const appOutPrefix =
+    (projectRootRel ? `${projectRootRel}/` : "") + toPosix(outDir) + "/";
+  const projectPkgJsonRel = projectRootRel
+    ? `${projectRootRel}/package.json`
+    : "package.json";
   let baseReal = base;
   let projectRootReal = projectRoot;
   try {
@@ -291,6 +341,9 @@ export async function createStandalone(opts: CreateStandaloneOptions): Promise<C
         version: "1.0.0",
         private: true,
         type: "module",
+        scripts: {
+          start: "zentify start",
+        },
       },
       null,
       2,
@@ -306,6 +359,19 @@ export async function createStandalone(opts: CreateStandaloneOptions): Promise<C
       `Standalone output ready at "${toPosix(path.relative(projectRoot, standaloneDir))}" ` +
         `(${fileList.size} traced files, ${copiedPackages} packages).`,
     );
+  }
+
+  // Everything is now copied into standalone; drop the original build
+  // artifacts so the output dir contains only the deployable folder.
+  const outDirAbs = path.join(projectRoot, outDir);
+  if (path.resolve(outDirAbs) !== path.resolve(projectRoot)) {
+    const removed = cleanupOutDir(outDirAbs, standaloneDir);
+    if (logger && removed > 0) {
+      logger.info(
+        `Removed build artifacts from "${toPosix(path.relative(projectRoot, outDirAbs))}" ` +
+          `(${removed} item${removed === 1 ? "" : "s"} removed, kept "standalone" only).`,
+      );
+    }
   }
 
   return { standaloneDir, fileCount: fileList.size };

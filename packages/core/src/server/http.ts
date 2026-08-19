@@ -92,13 +92,27 @@ export class HttpServer {
 
   public stop(): Promise<void> {
     return new Promise((resolve) => {
-      if (this.serverInstance) {
-        this.serverInstance.close(() => {
-          resolve();
-        });
-      } else {
+      const server = this.serverInstance;
+      if (!server) {
         resolve();
+        return;
       }
+
+      // Graceful shutdown: stop accepting new connections first.
+      server.close(() => resolve());
+
+      // Node keeps idle keep-alive sockets open indefinitely, which would
+      // block the `close` callback above. Drop idle sockets right away so
+      // the server can drain; in-flight requests still finish normally.
+      server.closeIdleConnections?.();
+
+      // Safety net: force-destroy any remaining connections (e.g. long-lived
+      // sockets) after a short grace period so `stop()` never hangs.
+      const timer = setTimeout(() => {
+        server.closeAllConnections?.();
+        resolve();
+      }, 5000);
+      timer.unref();
     });
   }
 }

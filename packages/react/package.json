@@ -27,7 +27,7 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.tsx src/components/index.ts src/hooks/index.ts src/utils/index.ts --format cjs,esm --clean && tsc --emitDeclarationOnly"
+    "build": "tsup src/index.tsx src/components/index.ts src/hooks/index.ts src/utils/index.ts --format cjs,esm --clean --minify && tsc --emitDeclarationOnly"
   },
   "files": [
     "dist"

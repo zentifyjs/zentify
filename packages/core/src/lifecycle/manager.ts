@@ -77,7 +77,15 @@ export class LifecycleManager {
     if (signal) {
       this.logger.warn(`Received ${signal}. Shutting down gracefully...`);
     }
+    // Hard fallback: if any hook or adapter hangs, make sure the process
+    // still dies instead of lingering forever.
+    const forceExit = setTimeout(() => {
+      this.logger.error(`Graceful shutdown timed out; forcing exit.`);
+      process.exit(1);
+    }, 15000);
+    forceExit.unref();
     await this.close();
+    clearTimeout(forceExit);
     process.exit(0);
   }
 }

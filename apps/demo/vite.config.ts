@@ -18,6 +18,8 @@ export default defineConfig(({ isSsrBuild }) => ({
 
   build: {
     manifest: true,
+    minify: true,
+    cssMinify: true,
     cssCodeSplit: true,
     outDir: "dist/public",
 
@@ -25,8 +27,12 @@ export default defineConfig(({ isSsrBuild }) => ({
       input: entries,
 
       output: {
-        entryFileNames: isSsrBuild ? "assets/[name]-[hash].mjs" : "assets/[name]-[hash].js",
-        chunkFileNames: isSsrBuild ? "assets/chunks/[name]-[hash].mjs" : "assets/chunks/[name]-[hash].js",
+        entryFileNames: isSsrBuild
+          ? "assets/[name]-[hash].mjs"
+          : "assets/[name]-[hash].js",
+        chunkFileNames: isSsrBuild
+          ? "assets/chunks/[name]-[hash].mjs"
+          : "assets/chunks/[name]-[hash].js",
         assetFileNames: "assets/[name]-[hash][extname]",
       },
     },
