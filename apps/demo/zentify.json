@@ -1,4 +1,5 @@
 {
   "entry": "app/index.ts",
-  "outDir": "dist"
+  "outDir": "dist",
+  "standalone": true
 }

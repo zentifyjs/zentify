@@ -142,6 +142,68 @@ Setelah instalasi, semua perintah dijalankan via `zentify`:
 
 ---
 
+## 📦 Standalone Build (ala Next.js)
+
+Mode **standalone** menghasilkan folder deployment yang **self-contained**: seluruh kode backend, `node_modules` yang benar-benar dibutuhkan (hasil *file tracing*), serta aset frontend — siap disalin ke server mana pun dan dijalankan tanpa `npm install`.
+
+### Mengaktifkan
+
+Tambahkan `"standalone": true` di `zentify.json`:
+
+```json
+{
+  "entry": "app/index.ts",
+  "outDir": "dist",
+  "standalone": true
+}
+```
+
+Atau lewati config dan jalankan langsung:
+
+```bash
+zentify build --standalone
+```
+
+### Hasil build
+
+Output berada di dalam folder build, seperti `.next/standalone` di Next.js:
+
+```
+dist/standalone/
+├── server.js                # entry point: jalankan `node server.js`
+├── package.json             # { "type": "module", "private": true }
+├── zentify.json             # agar resolveOutDir() = "dist"
+├── node_modules/            # hanya paket yang ter-trace (react, typeorm, pg, @zentify/*, dst.)
+└── dist/
+    ├── app/                 # hasil kompilasi backend (tsc)
+    ├── public/              # aset frontend (Vite client build)
+    └── server/              # bundle SSR (Vite server build)
+```
+
+### Cara deploy
+
+```bash
+# build
+npm run build
+
+# salin folder standalone ke server (env di-set dari luar, .env TIDAK ikut tersalin)
+cp -r dist/standalone /opt/my-app
+cd /opt/my-app
+
+# jalankan
+node server.js
+```
+
+> `server.js` otomatis men-set `NODE_ENV=production` dan men-selaraskan seluruh resolusi path ke dalam folder standalone.
+
+### Apa saja yang dimasukkan
+
+- Dependency **ditelusuri** dari entry backend + bundle SSR menggunakan file tracing (`@vercel/nft`), ditambah *safety net*: semua dependency eksplisit di `package.json` ikut disalin.
+- Paket dev-only (`vite`, `@vitejs/*`, `esbuild`, `@swc/*`, `rollup`, `tsx`, `@inquirer/*`) **tidak** ikut, karena hanya dibutuhkan saat development/build.
+- `.env` sengaja **tidak** disalin — environment variable disediakan oleh platform deploy.
+
+
+
 ## 🧱 Konsep & Cara Penggunaan
 
 ### Entry Point (`app/index.ts`)

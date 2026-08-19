@@ -5,6 +5,7 @@ import { resolveOutDir } from "../../utils/zentify-config";
 export interface ZentifyConfig {
   entry?: string;
   outDir?: string;
+  standalone?: boolean;
 }
 
 export function getZentifyConfig(): ZentifyConfig {

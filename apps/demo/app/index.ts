@@ -27,6 +27,6 @@ app.addAdapter({
 // Daftarkan View Engine
 app.addAdapter(new ZentifyViteAdapter())
 
-app.useStatic("build/public");
+app.useStatic("dist/public");
 
 app.run();
