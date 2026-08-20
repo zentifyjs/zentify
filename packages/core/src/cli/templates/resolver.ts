@@ -72,7 +72,7 @@ async function resolveLayer(layerName: string, acc: ResolvedTemplate): Promise<v
   }
 
   acc.sources.push({ dir, useFiles: true });
-  mergeInto(acc, manifest);
+  await mergeInto(acc, manifest);
 }
 
 async function applyTemplateManifest(
@@ -90,7 +90,7 @@ async function applyTemplateManifest(
   }
 
   acc.sources.push({ dir, useFiles: false });
-  mergeInto(acc, manifest);
+  await mergeInto(acc, manifest);
 
   if (manifest.layers) {
     for (const layer of manifest.layers) {

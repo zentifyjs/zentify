@@ -1,6 +1,6 @@
 import { Command } from "commander";
 import * as path from "node:path";
-import { select } from "@inquirer/prompts";
+import { confirm, select } from "@inquirer/prompts";
 import { Logger } from "../../utils";
 import {
   listBaseTemplates,
@@ -50,6 +50,7 @@ function resolveChoice(
 interface MakeAppOptions {
   type?: string;
   database?: string;
+  auth?: boolean;
   interaction?: boolean;
 }
 
@@ -58,6 +59,7 @@ export const makeApp = new Command("new")
   .argument("<name>", "Name of the application")
   .option("--type <template>", "Base template to use (skips the project type prompt)")
   .option("--database <driver>", "Database integration to use (skips the database prompt)")
+  .option("--auth", "Include session authentication (@zentify/auth). Requires a database driver.")
   .option("--no-interaction", "Generate without interactive prompts (requires --type)")
   .action(async (name: string, options: MakeAppOptions) => {
     const logger = new Logger({context: "make:app"})
@@ -85,6 +87,7 @@ export const makeApp = new Command("new")
       // commander's "--no-interaction" stores the value under "interaction"
       // (default true; passing the flag sets it to false).
       const noInteraction = options.interaction === false;
+      const explicitAuth = options.auth === true;
 
       if (noInteraction) {
         if (!type) {
@@ -123,11 +126,26 @@ export const makeApp = new Command("new")
         }
       }
 
+      // Authentication requires at least one database driver.
+      if (explicitAuth && dbType === "none") {
+        logger.error(
+          "--auth requires a database driver. Choose one with --database <driver>.",
+        );
+        process.exit(1);
+      }
+
+      let authEnabled = explicitAuth;
+      if (!noInteraction && !authEnabled && dbType !== "none") {
+        authEnabled = await confirm({
+          message: "Include Authentication (session)?",
+          default: false,
+        });
+      }
+
       const targetDir = path.join(process.cwd(), name);
-      const resolved = await resolveTemplate(
-        type,
-        dbType === "none" ? [] : [dbType],
-      );
+      const layers = dbType === "none" ? [] : [dbType];
+      if (authEnabled) layers.push("auth");
+      const resolved = await resolveTemplate(type, layers);
       await materialize(resolved, targetDir, { appName: name });
 
       logger.info(`Zentify application '${name}' created successfully!`);

@@ -1,0 +1,16 @@
+{
+  "name": "Authentication (Session)",
+  "description": "Session-based authentication with @zentify/auth (register/login/@AuthUser)",
+  "kind": "layer",
+  "deps": {
+    "dependencies": {
+      "@zentify/auth": "*"
+    }
+  },
+  "imports": [
+    "import { ZentifyAuthAdapter } from \"@zentify/auth\";",
+    "import { User } from \"./Models/User.js\";"
+  ],
+  "bootstrapTpl": "auth-adapter.ts.tpl",
+  "marker": "// [[zentify:auth]]"
+}

@@ -7,6 +7,7 @@ const app = new Zentify({
 
 app.useStatic("dist/public");
 
+// [[zentify:auth]]
 // [[zentify:vite]]
 // [[zentify:database]]
 
