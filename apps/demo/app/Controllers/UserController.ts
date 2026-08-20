@@ -11,10 +11,11 @@ import {
 } from "@zentify/core";
 import { UserService } from "../Services/UserService.js";
 import { UserDTO } from "./dto/UserDTO.js";
-import { AuthManager, AuthMiddleware } from "@zentify/auth";
+import { AuthManager, AuthMiddleware, AuthUser } from "@zentify/auth";
 import { User } from "../Models/User.js";
 import { RequestContextService } from "../Services/RequestContextService.js";
 import { AdminService } from "../Services/AdminService.js";
+import { Admin } from "../Models/Admin.js";
 
 @Controller({ path: "/users" })
 export class UserController {
@@ -22,7 +23,7 @@ export class UserController {
     @Inject(UserService)
     private readonly userService: UserService,
     private readonly adminService: AdminService,
-    private readonly authManager: AuthManager<User>,
+    private readonly authManager: AuthManager,
     private readonly ctxService: RequestContextService,
   ) {}
 
@@ -43,10 +44,16 @@ export class UserController {
     }
   }
 
+  @Get("/register")
+  async registerPage() {
+    return render("Register", { title: "Register" });
+  }
+
   @Post("/register")
   async register(@Body() body: any, @Res() res: any) {
     const { email, password } = body;
-    const user = await this.userService.createUser({ name: email, email });
+    const name = typeof body.name === "string" && body.name.trim() ? body.name : email;
+    const user = await this.userService.createUser({ name, email });
     user.password = await this.authManager.hashPassword(password); // Set the password for the user
     await this.userService.updateUser(user.id, {
       name: user.name,
@@ -54,7 +61,7 @@ export class UserController {
       password: user.password,
     }); // Update the user with the password
 
-    return { message: "User registered successfully" };
+    return redirect("/login");
   }
 
   @Post("/admin/login")
@@ -85,12 +92,11 @@ export class UserController {
       password: user.password,
     }); // Update the user with the password
 
-    return { message: "User registered successfully" };
+    return redirect("/login");
   }
 
   @Get("/admin/me", [new AuthMiddleware({ guard: "admin" })])
-  async adminMe() {
-    const user = await this.authManager.guard("admin").user();
+  async adminMe(@AuthUser("admin") user: Admin | null) {
     if (user) {
       return { user };
     } else {
@@ -99,8 +105,7 @@ export class UserController {
   }
 
   @Get("/me", [new AuthMiddleware({ guard: "web" })])
-  async me() {
-    const user = await this.authManager.guard("web").user();
+  async me(@AuthUser("web") user: User | null) {
     if (user) {
       return { user };
     } else {
@@ -108,7 +113,7 @@ export class UserController {
     }
   }
 
-  @Get("/")
+  @Get("/", [new AuthMiddleware({ guard: "web" })])
   async index(@Query() query: any) {
     const page = parseInt(query.page || "1", 10);
     const limit = parseInt(query.limit || "5", 10);

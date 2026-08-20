@@ -34,7 +34,11 @@ export class HttpServer {
     this.onShutdown = onShutdown;
 
     this.responseHandler = new ResponseHandler(this.adapters);
-    this.dispatcher = new RequestDispatcher(this.responseHandler, this.container);
+    this.dispatcher = new RequestDispatcher(
+      this.responseHandler,
+      this.container,
+      this.adapters,
+    );
   }
 
   public registerRoutes(routes: Routes[]): void {
@@ -59,8 +63,10 @@ export class HttpServer {
       this.serverInstance = createServer(async (nodeReq, nodeRes) => {
         const req = await enhanceRequest(nodeReq, this.appContext);
         const res = enhanceResponse(nodeRes);
+
         const requestContextService: ZentifyHttpContextService =
           this.container.resolve(REQUEST_CONTEXT);
+
         await requestContextService.run({ req, res }, async () => {
           for (const adapter of this.adapters) {
             const globalMiddleware = adapter.getGlobalMiddleware?.();

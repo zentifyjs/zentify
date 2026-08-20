@@ -19,6 +19,7 @@ describe("Body decorator", () => {
       {
         index: 0,
         type: "body",
+        kind: { type: "internal" },
         additionalData: { dtoClass: CreateUserDto },
       },
     ]);
@@ -45,6 +46,7 @@ describe("Query decorator", () => {
       {
         index: 0,
         type: "query",
+        kind: { type: "internal" },
         additionalData: { dtoClass: CreateUserDto },
       },
     ]);
@@ -67,8 +69,18 @@ describe("Query decorator", () => {
     const meta = getParameterMetadata(C.prototype, "find");
     expect(meta).toEqual(
       expect.arrayContaining([
-        { index: 0, type: "query", additionalData: { dtoClass: CreateUserDto } },
-        { index: 1, type: "body", additionalData: { dtoClass: CreateUserDto } },
+        {
+          index: 0,
+          type: "query",
+          kind: { type: "internal" },
+          additionalData: { dtoClass: CreateUserDto },
+        },
+        {
+          index: 1,
+          type: "body",
+          kind: { type: "internal" },
+          additionalData: { dtoClass: CreateUserDto },
+        },
       ]),
     );
   });

@@ -9,4 +9,5 @@ export * from "./controller";
 export * from "./module";
 export * from "./dependency";
 export * from "./inject";
-export * from "./config";
+export * from "./config";
+export * from "./metadata";

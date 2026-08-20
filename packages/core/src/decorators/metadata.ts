@@ -5,15 +5,23 @@ export type ParameterType =
   | "param"
   | "query"
   | "file"
-  | "files";
+  | "files"
+  | string;
+
+export interface ParameterKind {
+  type: "internal" | "adapter";
+  name?: string;
+}
 
 export interface ParameterMetadata {
   index: number;
   type: ParameterType;
   name?: string;
   key?: string;
+  kind?: ParameterKind;
   additionalData?: {
     dtoClass?: any;
+    [key: string]: any;
   };
 }
 
@@ -37,7 +45,7 @@ export function addParameterMetadata(
     params = [];
     methods.set(propertyKey, params);
   }
-  params.push(metadata);
+  params.push({ ...metadata, kind: metadata.kind ?? { type: "internal" } });
 }
 
 export function getParameterMetadata(

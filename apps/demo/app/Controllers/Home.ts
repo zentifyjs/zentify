@@ -1,13 +1,37 @@
-import { Body, Controller, Get, Post, render } from "@zentify/core";
+import { Body, Controller, Get, Post, render, redirect } from "@zentify/core";
+import { AuthManager } from "@zentify/auth";
 import { HomeService } from "../Services/HomeService.js";
 import { HomeDTO } from "./dto/HomeDTO.js";
 
 @Controller({path:"/"})
 export class HomeController{
     constructor(
-        private readonly homeService: HomeService
+        private readonly homeService: HomeService,
+        private readonly authManager: AuthManager,
     ){}
 
+    @Get("/login")
+    async loginPage(){
+        return render("Login", { title: "Login" });
+    }
+
+    @Post("/login")
+    async login(@Body() body: any){
+        const { email, password } = body;
+        const success = await this.authManager.guard("web").attempt({ email, password });
+
+        if (success) {
+            return redirect("/todos");
+        }
+
+        return render("Login", { title: "Login", error: "Email atau password salah" });
+    }
+
+    @Post("/logout")
+    async logout(){
+        await this.authManager.guard("web").logout();
+        return redirect("/login");
+    }
 
     @Post("/api/greetings")
     async greeting(@Body() body: HomeDTO){

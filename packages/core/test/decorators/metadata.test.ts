@@ -16,11 +16,11 @@ describe("parameter metadata", () => {
     addParameterMetadata(target, "other", { index: 0, type: "param", key: "id" });
 
     expect(getParameterMetadata(target, "handler")).toEqual([
-      { index: 0, type: "req" },
-      { index: 1, type: "res" },
+      { index: 0, type: "req", kind: { type: "internal" } },
+      { index: 1, type: "res", kind: { type: "internal" } },
     ]);
     expect(getParameterMetadata(target, "other")).toEqual([
-      { index: 0, type: "param", key: "id" },
+      { index: 0, type: "param", key: "id", kind: { type: "internal" } },
     ]);
     expect(getParameterMetadata(target, "missing")).toEqual([]);
   });
@@ -30,7 +30,12 @@ describe("parameter metadata", () => {
       handler(@Param("id") id: string) {}
     }
     const meta = getParameterMetadata(C.prototype, "handler");
-    expect(meta).toContainEqual({ index: 0, type: "param", key: "id" });
+    expect(meta).toContainEqual({
+      index: 0,
+      type: "param",
+      key: "id",
+      kind: { type: "internal" },
+    });
   });
 
   it("records @Req metadata", () => {
@@ -38,7 +43,7 @@ describe("parameter metadata", () => {
       handler(@Req() req: unknown) {}
     }
     const meta = getParameterMetadata(C.prototype, "handler");
-    expect(meta).toContainEqual({ index: 0, type: "req" });
+    expect(meta).toContainEqual({ index: 0, type: "req", kind: { type: "internal" } });
   });
 
   it("records @Res metadata", () => {
@@ -46,7 +51,7 @@ describe("parameter metadata", () => {
       handler(@Res() res: unknown) {}
     }
     const meta = getParameterMetadata(C.prototype, "handler");
-    expect(meta).toContainEqual({ index: 0, type: "res" });
+    expect(meta).toContainEqual({ index: 0, type: "res", kind: { type: "internal" } });
   });
 
   it("records @File metadata with the field name", () => {
@@ -54,7 +59,12 @@ describe("parameter metadata", () => {
       handler(@File("data") file: unknown) {}
     }
     const meta = getParameterMetadata(C.prototype, "handler");
-    expect(meta).toContainEqual({ index: 0, type: "file", key: "data" });
+    expect(meta).toContainEqual({
+      index: 0,
+      type: "file",
+      key: "data",
+      kind: { type: "internal" },
+    });
   });
 
   it("assigns the correct index for mixed parameters", () => {
@@ -64,9 +74,14 @@ describe("parameter metadata", () => {
     const meta = getParameterMetadata(C.prototype, "handler");
     expect(meta).toEqual(
       expect.arrayContaining([
-        { index: 0, type: "req" },
-        { index: 1, type: "param", key: "id" },
-        { index: 2, type: "file", key: "f" },
+        { index: 0, type: "req", kind: { type: "internal" } },
+        {
+          index: 1,
+          type: "param",
+          key: "id",
+          kind: { type: "internal" },
+        },
+        { index: 2, type: "file", key: "f", kind: { type: "internal" } },
       ]),
     );
   });

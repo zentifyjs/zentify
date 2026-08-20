@@ -4,6 +4,7 @@ import {
   Zentify,
   ZentifyAdapter,
   ZentifyAdapterKind,
+  ZentifyArgumentResolver,
 } from "@zentify/core";
 import { AuthManager } from "./auth_manager";
 import { GuardInstance } from "./guard_instance";
@@ -11,6 +12,7 @@ import { SessionGuard } from "./guard/session";
 import { MemorySessionStore } from "./store/memory";
 import { AuthCookieImpl } from "./auth_cookie";
 import { BcryptHasher } from "./hasher/bcrypt";
+import { AUTH_ADAPTER_NAME, DEPEND_ON_ADAPTERS } from "./constant";
 
 export interface AuthGuardConfig {
   driver: "session" | "jwt";
@@ -56,9 +58,9 @@ function getPasswordHasher(type: "bcrypt" | "argon2"): BcryptHasher {
 }
 
 export class ZentifyAuthAdapter implements ZentifyAdapter {
-  name = "ZentifyAuthAdapter";
+  name = AUTH_ADAPTER_NAME;
   kind: ZentifyAdapterKind = "common";
-  dependsOn = ["TypeOrmAdapter"];
+  dependsOn = DEPEND_ON_ADAPTERS;
   private options: ZentifyAuthAdapterOptions;
   constructor(options: ZentifyAuthAdapterOptions) {
     this.options = options;
@@ -107,4 +109,20 @@ export class ZentifyAuthAdapter implements ZentifyAdapter {
     providerSet: Set<any>,
     container: any,
   ): void {}
+
+  getResolverArgs(key: string): ZentifyArgumentResolver | undefined {
+    const map = {
+      authuser: async (param: any, ctx: any) => {
+        const { container } = ctx;
+
+        const result = await container
+          .resolve(AuthManager)
+          .guard(param.additionalData?.guardName ?? "web")
+          .user();
+        return result;
+      },
+    };
+
+    return map[key as keyof typeof map] ?? undefined;
+  }
 }

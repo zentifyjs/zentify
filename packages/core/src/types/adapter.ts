@@ -1,8 +1,21 @@
-import type { InjectionToken } from "../dependencies/container";
+import type { Container, InjectionToken } from "../dependencies/container";
 import { Zentify } from "../zentify";
 import { ZentifyViewEngine } from "../view";
+import type { ZRequest, ZResponse } from "./message";
 
 export type ZentifyAdapterKind = "database" | "view" | "common" | "other";
+
+export interface ZentifyArgumentContext {
+  req: ZRequest;
+  res: ZResponse;
+  container: Container;
+  param: any;
+}
+
+export type ZentifyArgumentResolver = (
+  param: any,
+  ctx: ZentifyArgumentContext,
+) => Promise<any> | any;
 
 export interface ZentifyAdapter {
   name: string;
@@ -58,6 +71,13 @@ export interface ZentifyAdapter {
    * is responsible for rendering views.
    */
   getViewEngine?(): ZentifyViewEngine;
+
+  /**
+   * Resolves an argument for a route parameter decorator bound to this
+   * adapter via parameter metadata `kind: { type: "adapter", name }`.
+   * Called by RequestDispatcher.getArgs(); implement per argument type key.
+   */
+  getResolverArgs?(key: string): ZentifyArgumentResolver | undefined;
 }
 
 export interface ZentifyAdapterFactory {
