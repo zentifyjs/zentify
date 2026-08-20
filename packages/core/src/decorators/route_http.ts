@@ -1,11 +1,11 @@
 // core/decorators/route.ts
 
-import { HttpMethod, Middleware } from "../types";
+import { HttpMethod, MiddlewareHandler } from "../types";
 
 export interface RouteMetadata {
   method: HttpMethod;
   path: string;
-  middlewares: Middleware[];
+  middlewares: MiddlewareHandler[];
 }
 
 const routeMetadata = new WeakMap<
@@ -16,7 +16,7 @@ const routeMetadata = new WeakMap<
 function Route(
   method: HttpMethod,
   path: string,
-  middlewares: Middleware[] = [],
+  middlewares: MiddlewareHandler[] = [],
 ) {
   return function (
     target: object,
@@ -44,22 +44,22 @@ export function getRouteMetadata(
   return routeMetadata.get(target) ?? new Map();
 }
 
-export function Get(path = "/", middlewares: Middleware[] = []) {
+export function Get(path = "/", middlewares: MiddlewareHandler[] = []) {
   return Route("GET", path, middlewares);
 }
 
-export function Post(path = "/", middlewares: Middleware[] = []) {
+export function Post(path = "/", middlewares: MiddlewareHandler[] = []) {
   return Route("POST", path, middlewares);
 }
 
-export function Put(path = "/", middlewares: Middleware[] = []) {
+export function Put(path = "/", middlewares: MiddlewareHandler[] = []) {
   return Route("PUT", path, middlewares);
 }
 
-export function Patch(path = "/", middlewares: Middleware[] = []) {
+export function Patch(path = "/", middlewares: MiddlewareHandler[] = []) {
   return Route("PATCH", path, middlewares);
 }
 
-export function Delete(path = "/", middlewares: Middleware[] = []) {
+export function Delete(path = "/", middlewares: MiddlewareHandler[] = []) {
   return Route("DELETE", path, middlewares);
 }

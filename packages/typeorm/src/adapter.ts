@@ -69,14 +69,22 @@ export class ZentifyTypeOrmAdapter implements ZentifyAdapter {
       useValue: this.dataSource,
     });
     const entities = this.dataSource.entityMetadatas.map((meta) => meta.target);
-    const authRepo = entities.find((entity) => this.isAuthRepository(entity));
-    if (authRepo) {
-      app.container.provide({
-        token: "AUTH_REPOSITORY",
-        useValue: new TypeOrmAuthRepository(
-          this.dataSource.getRepository(authRepo),
-        ),
-      });
+    const authRepos = entities.filter((entity) =>
+      this.isAuthRepository(entity),
+    );
+    if (authRepos.length > 0) {
+      for (const authRepo of authRepos) {
+        const entityName =
+          typeof authRepo === "function"
+            ? authRepo.name
+            : (authRepo as any).options?.name || "Unknown";
+        const repository = this.dataSource.getRepository(authRepo);
+
+        app.container.provideGlobal({
+          token: `AUTH_REPOSITORY_${entityName}`,
+          useValue: new TypeOrmAuthRepository(repository),
+        });
+      }
     }
     this.app = app;
   }

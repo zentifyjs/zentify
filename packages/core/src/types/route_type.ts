@@ -1,5 +1,5 @@
 import { HandlerFunction } from "./controller";
-import { Middleware } from "./middleware";
+import { MiddlewareHandler } from "./middleware";
 
 export type RequestMethod =
   | "GET"
@@ -17,7 +17,7 @@ export type Routes = {
   method: HttpMethod;
   path: string;
   handler: HandlerFunction;
-  middlewares: Middleware[];
+  middlewares: MiddlewareHandler[];
   metadata?: any[];
   controllerInstance?: any;
 };

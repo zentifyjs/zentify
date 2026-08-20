@@ -4,6 +4,8 @@ import { ZentifyViteAdapter } from "@zentify/vite";
 import { ZentifyTypeOrmAdapter } from "@zentify/typeorm";
 import { ZentifyAuthAdapter } from "@zentify/auth";
 import { AppConfig } from "./Config/AppConfig.js";
+import { User } from "./Models/User.js";
+import { Admin } from "./Models/Admin.js";
 
 const app = new Zentify({
   routes: { web: "app/Routes/web.js" },
@@ -11,8 +13,18 @@ const app = new Zentify({
 
 app.addAdapter(
   new ZentifyAuthAdapter({
-    resultType: "session",
+    defaultGuard: "web",
     passwordHasher: "bcrypt",
+    guards: {
+      web: {
+        driver: "session",
+        provider: User,
+      },
+      admin: {
+        driver: "session",
+        provider: Admin,
+      },
+    },
   }),
 );
 

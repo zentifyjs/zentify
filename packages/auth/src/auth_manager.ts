@@ -1,56 +1,55 @@
-import { Authenticatable, AuthRepository } from "@zentify/core";
+import { Authenticatable } from "@zentify/core";
 import { PasswordHasher } from "./types/hasher";
-import { AuthGuard } from "./types/guard";
+import { GuardInstance } from "./guard_instance";
 
-export class AuthManager<T extends Authenticatable> {
+export class AuthManager<T extends Authenticatable = Authenticatable> {
   constructor(
-    private readonly repository: AuthRepository<T>,
-    private readonly guard: AuthGuard<T>,
+    private readonly defaultGuardName: string,
+    private readonly guards: Record<string, GuardInstance<any>>,
     private readonly hasher: PasswordHasher,
   ) {}
 
-  async attempt(credentials: Record<string, unknown>): Promise<boolean> {
-    const { password, ...lookup } = credentials;
+  guard<G extends Authenticatable = T>(name?: string): GuardInstance<G> {
+    const guardName = name ?? this.defaultGuardName;
+    const instance = this.guards[guardName];
 
-    const user = await this.repository.findByCredentials(lookup);
-
-    if (!user) {
-      return false;
+    if (!instance) {
+      throw new Error(
+        `Auth guard "${guardName}" is not registered. ` +
+          `Available guards: ${Object.keys(this.guards).join(", ")}.`,
+      );
     }
 
-    const valid = await this.hasher.verify(
-      String(password),
-      user.getAuthPassword!(),
-    );
-
-    if (!valid) {
-      return false;
-    }
-
-    await this.guard.login(user, lookup);
-
-    return true;
+    return instance as GuardInstance<G>;
   }
 
-  async user(): Promise<T | null> {
-    const identifier = await this.guard.getIdentifier();
-
-    if (!identifier) {
-      return null;
-    }
-
-    return this.repository.findByCredentials(identifier.lookup);
-  }
-
-  async hashPassword(password: string): Promise<string> {
+  hashPassword(password: string): Promise<string> {
     return this.hasher.hash(password);
   }
 
+  async attempt(credentials: Record<string, unknown>): Promise<boolean> {
+    return this.guard().attempt(credentials);
+  }
+
+  async login(
+    credentials: Record<string, unknown>,
+  ): Promise<ReturnType<GuardInstance<Authenticatable>["login"]>> {
+    return this.guard().login(credentials);
+  }
+
+  async user(): Promise<T | null> {
+    return this.guard<T>().user();
+  }
+
   async check(): Promise<boolean> {
-    return (await this.user()) !== null;
+    return this.guard().check();
+  }
+
+  token(): string | undefined {
+    return this.guard().token();
   }
 
   async logout(): Promise<void> {
-    await this.guard.logout();
+    return this.guard().logout();
   }
 }

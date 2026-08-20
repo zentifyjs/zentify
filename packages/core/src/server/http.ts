@@ -34,7 +34,7 @@ export class HttpServer {
     this.onShutdown = onShutdown;
 
     this.responseHandler = new ResponseHandler(this.adapters);
-    this.dispatcher = new RequestDispatcher(this.responseHandler);
+    this.dispatcher = new RequestDispatcher(this.responseHandler, this.container);
   }
 
   public registerRoutes(routes: Routes[]): void {

@@ -1,13 +1,15 @@
 import { Routes, DTOClass } from "../types";
-import { Middleware } from "../types/middleware";
+import { Middleware, MiddlewareFunction, MiddlewareHandler, ZentifyMiddlewareContext } from "../types/middleware";
 import { ZRequest, ZResponse } from "../types/message";
 import { HttpException } from "../exception/http";
 import { safeParse } from "valibot";
 import { Route } from "../router/route";
 import { ResponseHandler } from "./response";
+import type { Container } from "../dependencies";
 
 export class RequestDispatcher {
   private responseHandler: ResponseHandler;
+  private container?: Container;
 
   private argHandlers: Record<string, (param: any, req: ZRequest, res: ZResponse) => Promise<any> | any> = {
     "req": (param, req, res) => req,
@@ -18,8 +20,9 @@ export class RequestDispatcher {
     "query": (param, req, res) => this.validateDto(req.query, param.additionalData?.dtoClass, "Invalid request query"),
   };
 
-  constructor(responseHandler: ResponseHandler) {
+  constructor(responseHandler: ResponseHandler, container?: Container) {
     this.responseHandler = responseHandler;
+    this.container = container;
   }
 
   public async dispatch(req: ZRequest, res: ZResponse, staticHandler?: any): Promise<void> {
@@ -55,14 +58,20 @@ export class RequestDispatcher {
     await this.callHandler(route, req, res, middlewares);
   }
 
-  private async callHandler(route: Routes, req: ZRequest, res: ZResponse, middlewares: Middleware[]): Promise<void> {
+  private async callHandler(route: Routes, req: ZRequest, res: ZResponse, middlewares: MiddlewareHandler[]): Promise<void> {
     try {
-      await this.executeMiddleware(middlewares, req, res, async () => {
+      const ctx: ZentifyMiddlewareContext = {
+        container: this.container as Container,
+        request: req,
+        response: res,
+      };
+
+      await this.executeMiddleware(middlewares, ctx, async () => {
         const args: any[] = await this.getArgs(route, req, res);
         const result = Array.isArray(route.handler)
           ? await this.callController(route, args)
           : await route.handler(...args);
-        
+
         await this.responseHandler.handleResponse(result, req, res);
       });
     } catch (error: unknown) {
@@ -70,7 +79,11 @@ export class RequestDispatcher {
     }
   }
 
-  private async executeMiddleware(middlewares: Middleware[], req: ZRequest, res: ZResponse, handler: () => Promise<void>): Promise<void> {
+  private async executeMiddleware(
+    middlewares: MiddlewareHandler[],
+    ctx: ZentifyMiddlewareContext,
+    handler: () => Promise<void>,
+  ): Promise<void> {
     let index = -1;
 
     const dispatch = async (currentIndex: number): Promise<void> => {
@@ -83,7 +96,10 @@ export class RequestDispatcher {
         return;
       }
       const middleware = middlewares[currentIndex];
-      await middleware.handle(req, res, () => dispatch(currentIndex + 1));
+      const next = () => dispatch(currentIndex + 1);
+      await (typeof middleware === "function"
+        ? (middleware as MiddlewareFunction)(ctx, next)
+        : (middleware as Middleware).handle(ctx, next));
     };
 
     await dispatch(0);

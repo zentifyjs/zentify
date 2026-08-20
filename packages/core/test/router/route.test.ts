@@ -7,31 +7,31 @@ import { Module } from "../../src/decorators/module";
 import type { Middleware } from "../../src/types/middleware";
 
 class GlobalMw implements Middleware {
-  async handle(_req: any, _res: any, next: () => Promise<void>) {
+  async handle(_ctx: any, next: () => Promise<void>) {
     await next();
   }
 }
 
 class RouteMw implements Middleware {
-  async handle(_req: any, _res: any, next: () => Promise<void>) {
+  async handle(_ctx: any, next: () => Promise<void>) {
     await next();
   }
 }
 
 class GroupMw implements Middleware {
-  async handle(_req: any, _res: any, next: () => Promise<void>) {
+  async handle(_ctx: any, next: () => Promise<void>) {
     await next();
   }
 }
 
 class SharedMw implements Middleware {
-  async handle(_req: any, _res: any, next: () => Promise<void>) {
+  async handle(_ctx: any, next: () => Promise<void>) {
     await next();
   }
 }
 
 class AuthMw implements Middleware {
-  async handle(_req: any, _res: any, next: () => Promise<void>) {
+  async handle(_ctx: any, next: () => Promise<void>) {
     await next();
   }
 }
@@ -104,7 +104,7 @@ describe("Route registration", () => {
   });
 
   it("accepts function-form middlewares", () => {
-    const fnMw = async (_req: any, _res: any, next: () => Promise<void>) => {
+    const fnMw = async (_ctx: any, next: () => Promise<void>) => {
       await next();
     };
 
@@ -116,7 +116,7 @@ describe("Route registration", () => {
 
   it("throws on duplicate anonymous middlewares", () => {
     const anonymous = Object.defineProperty(
-      async (_req: any, _res: any, next: () => Promise<void>) => {
+      async (_ctx: any, next: () => Promise<void>) => {
         await next();
       },
       "name",

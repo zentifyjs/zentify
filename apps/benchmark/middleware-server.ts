@@ -1,5 +1,5 @@
 import { Route, Zentify, Controller, Get, Module, Dependency } from "@zentify/core";
-import type { Middleware, ZRequest, ZResponse } from "@zentify/core";
+import type { Middleware, ZentifyMiddlewareContext } from "@zentify/core";
 
 const port = 3003;
 const host = "127.0.0.1";
@@ -9,7 +9,7 @@ const app = new Zentify({
 });
 
 class BenchmarkMiddleware implements Middleware {
-    async handle(_req: ZRequest, _res: ZResponse, next: Function) {
+    async handle(_ctx: ZentifyMiddlewareContext, next: () => Promise<void>) {
         // Simulating some middleware processing
         await next();
     }

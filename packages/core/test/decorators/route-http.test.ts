@@ -10,7 +10,7 @@ import {
 import type { Middleware } from "../../src/types/middleware";
 
 class Mw implements Middleware {
-  async handle(_req: any, _res: any, next: () => Promise<void>) {
+  async handle(_ctx: any, next: () => Promise<void>) {
     await next();
   }
 }

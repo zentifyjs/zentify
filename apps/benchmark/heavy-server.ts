@@ -1,5 +1,5 @@
 import { Route, Zentify, Controller, Get, Module, Param, Query } from "@zentify/core";
-import type { Middleware, ZRequest, ZResponse } from "@zentify/core";
+import type { Middleware, ZentifyMiddlewareContext } from "@zentify/core";
 
 const port = 3005;
 const host = "127.0.0.1";
@@ -9,17 +9,17 @@ const app = new Zentify({
 });
 
 class AuthMiddleware implements Middleware {
-  async handle(req: ZRequest, res: ZResponse, next: Function) {
+  async handle(ctx: ZentifyMiddlewareContext, next: () => Promise<void>) {
     // Simulate auth token parsing
-    (req as any).user = { id: 999, role: "admin" };
+    (ctx.request as any).user = { id: 999, role: "admin" };
     await next();
   }
 }
 
 class CacheMiddleware implements Middleware {
-  async handle(req: ZRequest, res: ZResponse, next: Function) {
+  async handle(ctx: ZentifyMiddlewareContext, next: () => Promise<void>) {
     // Simulate cache hit check
-    (req as any).cacheHit = false;
+    (ctx.request as any).cacheHit = false;
     await next();
   }
 }

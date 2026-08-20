@@ -33,11 +33,11 @@ class BusinessLogicService {
 
 // --- 2. Multiple Async Middlewares ---
 const simulateDelay = () => Promise.resolve();
-class Mw1 implements Middleware { async handle(req: any, res: any, next: Function) { await simulateDelay(); req.mw1 = Date.now(); await next(); } }
-class Mw2 implements Middleware { async handle(req: any, res: any, next: Function) { await simulateDelay(); req.mw2 = Date.now(); await next(); } }
-class Mw3 implements Middleware { async handle(req: any, res: any, next: Function) { await simulateDelay(); req.mw3 = Date.now(); await next(); } }
-class Mw4 implements Middleware { async handle(req: any, res: any, next: Function) { await simulateDelay(); req.mw4 = Date.now(); await next(); } }
-class Mw5 implements Middleware { async handle(req: any, res: any, next: Function) { await simulateDelay(); req.mw5 = Date.now(); await next(); } }
+class Mw1 implements Middleware { async handle(ctx: any, next: () => Promise<void>) { await simulateDelay(); ctx.request.mw1 = Date.now(); await next(); } }
+class Mw2 implements Middleware { async handle(ctx: any, next: () => Promise<void>) { await simulateDelay(); ctx.request.mw2 = Date.now(); await next(); } }
+class Mw3 implements Middleware { async handle(ctx: any, next: () => Promise<void>) { await simulateDelay(); ctx.request.mw3 = Date.now(); await next(); } }
+class Mw4 implements Middleware { async handle(ctx: any, next: () => Promise<void>) { await simulateDelay(); ctx.request.mw4 = Date.now(); await next(); } }
+class Mw5 implements Middleware { async handle(ctx: any, next: () => Promise<void>) { await simulateDelay(); ctx.request.mw5 = Date.now(); await next(); } }
 
 // --- 3. Extreme Valibot DTO ---
 class ExtremePayloadDto {

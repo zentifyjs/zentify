@@ -6,34 +6,53 @@ import {
   ZentifyAdapterKind,
 } from "@zentify/core";
 import { AuthManager } from "./auth_manager";
+import { GuardInstance } from "./guard_instance";
 import { SessionGuard } from "./guard/session";
 import { MemorySessionStore } from "./store/memory";
 import { AuthCookieImpl } from "./auth_cookie";
 import { BcryptHasher } from "./hasher/bcrypt";
 
+export interface AuthGuardConfig {
+  driver: "session" | "jwt";
+  provider: new (...args: any[]) => Authenticatable;
+}
+
 export interface ZentifyAuthAdapterOptions {
-  resultType?: "session" | "jwt";
+  defaultGuard: string;
   passwordHasher?: "bcrypt" | "argon2";
-  model?: Authenticatable;
+  guards: Record<string, AuthGuardConfig>;
 }
 
 function getSessionGuard(
-  type: "session" | "jwt",
+  name: string,
   app: Zentify,
 ): SessionGuard<Authenticatable> {
-  if (type === "session") {
-    return new SessionGuard(new MemorySessionStore(), new AuthCookieImpl(app));
-  } else {
-    throw new Error("JWT guard not implemented yet");
+  return new SessionGuard(
+    name,
+    new MemorySessionStore(),
+    new AuthCookieImpl(app),
+    { cookieName: `zentify_${name}` },
+  );
+}
+
+function getGuard(
+  name: string,
+  driver: "session" | "jwt",
+  app: Zentify,
+): SessionGuard<Authenticatable> {
+  if (driver === "session") {
+    return getSessionGuard(name, app);
   }
+
+  throw new Error(`JWT driver for guard "${name}" is not implemented yet.`);
 }
 
 function getPasswordHasher(type: "bcrypt" | "argon2"): BcryptHasher {
   if (type === "bcrypt") {
     return new BcryptHasher();
-  } else {
-    throw new Error("Password hasher not implemented yet");
   }
+
+  throw new Error("Password hasher not implemented yet");
 }
 
 export class ZentifyAuthAdapter implements ZentifyAdapter {
@@ -46,19 +65,42 @@ export class ZentifyAuthAdapter implements ZentifyAdapter {
   }
 
   onInit(app: Zentify): Promise<void> | void {
-    const repo: AuthRepository<Authenticatable> =
-      app?.container.resolve("AUTH_REPOSITORY");
+    const container = app?.container;
+    const hasher = getPasswordHasher(this.options.passwordHasher || "bcrypt");
+
+    const guards: Record<string, GuardInstance<Authenticatable>> = {};
+
+    for (const [name, config] of Object.entries(this.options.guards)) {
+      const providerName = config.provider?.name || "Unknown";
+      const repo = container.resolve<AuthRepository<Authenticatable>>(
+        `AUTH_REPOSITORY_${providerName}`,
+      );
+
+      guards[name] = new GuardInstance(
+        name,
+        repo,
+        getGuard(name, config.driver, app),
+        hasher,
+      );
+    }
 
     const authManager = new AuthManager(
-      repo,
-      getSessionGuard(this.options.resultType || "session", app),
-      getPasswordHasher(this.options.passwordHasher || "bcrypt"),
+      this.options.defaultGuard,
+      guards,
+      hasher,
     );
 
-    app?.container.provideGlobal({
+    container.provideGlobal({
       token: AuthManager,
       useValue: authManager,
     });
+
+    for (const name of Object.keys(guards)) {
+      container.provideGlobal({
+        token: `AuthManager.${name}`,
+        useValue: guards[name],
+      });
+    }
   }
   onModuleResolve(
     moduleMetadata: any,

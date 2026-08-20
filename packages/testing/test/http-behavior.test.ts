@@ -58,7 +58,7 @@ class CreateController {
 const order: string[] = [];
 
 class FirstMiddleware implements Middleware {
-  async handle(_req: any, _res: any, next: () => Promise<void>) {
+  async handle(_ctx: any, next: () => Promise<void>) {
     order.push("m1");
     await next();
     order.push("m1-after");
@@ -66,7 +66,7 @@ class FirstMiddleware implements Middleware {
 }
 
 class SecondMiddleware implements Middleware {
-  async handle(_req: any, _res: any, next: () => Promise<void>) {
+  async handle(_ctx: any, next: () => Promise<void>) {
     order.push("m2");
     await next();
     order.push("m2-after");
@@ -89,7 +89,7 @@ class HttpController {
 
 function createDoubleNext(): Middleware[] {
   class DoubleNextMiddleware implements Middleware {
-    async handle(_req: any, _res: any, next: () => Promise<void>) {
+    async handle(_ctx: any, next: () => Promise<void>) {
       next();
       await next();
     }

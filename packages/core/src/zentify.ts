@@ -1,5 +1,5 @@
 import "reflect-metadata";
-import { Middleware } from "./types/middleware";
+import { MiddlewareHandler } from "./types/middleware";
 import { Route } from "./router/route";
 import { HttpServer } from "./server/http";
 import { AppContext } from "./types/app_context";
@@ -67,7 +67,7 @@ export class Zentify {
     this.staticHandler = serveStatic(path, options);
   }
 
-  addMiddleware(middleware: Middleware) {
+  addMiddleware(middleware: MiddlewareHandler) {
     Route.use(middleware);
   }
 

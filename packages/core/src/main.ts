@@ -1,6 +1,7 @@
 import { Controller, Get, Module, Dependency, Req } from "./decorators";
 import { Route } from "./router/route";
-import { Middleware, ZRequest, ZResponse } from "./types";
+import { Middleware, ZentifyMiddlewareContext } from "./types";
+import { ZRequest } from "./types";
 import { Zentify } from "./zentify";
 
 const app = new Zentify({
@@ -10,7 +11,7 @@ const app = new Zentify({
 });
 
 class HomeMiddleware implements Middleware{
-    async handle(req: ZRequest, res: ZResponse, next: Function) {
+    async handle(ctx: ZentifyMiddlewareContext, next: () => Promise<void>) {
         console.log("Home Middleware")
         await next()
     }

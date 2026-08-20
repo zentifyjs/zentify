@@ -1,10 +1,10 @@
 import type { ControllerClass } from "./controller";
-import { Middleware } from "./middleware";
+import { MiddlewareHandler } from "./middleware";
 import { HttpMethod, RequestMethod } from "./route_type";
 
 export type ModuleClass<T = any> = new (...args: any[]) => T;
 export type ModuleMiddleware = {
-    middlewares: Middleware[]
+    middlewares: MiddlewareHandler[]
     excludeRoutes?: {
         path: string
         method: RequestMethod

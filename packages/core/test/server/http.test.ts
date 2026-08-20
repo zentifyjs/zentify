@@ -1,10 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { createConnection, type Socket } from "node:net";
+import { AsyncLocalStorage } from "node:async_hooks";
 import { HttpServer } from "../../src/server/http";
+import { Container } from "../../src/dependencies";
+import { REQUEST_CONTEXT } from "../../src/constants";
+import { ZentifyHttpContextService } from "../../src/adapters";
 
 describe("HttpServer.stop", () => {
   it("resolves even with an open keep-alive connection", async () => {
-    const server = new HttpServer({ server: { port: 0, host: "127.0.0.1" } });
+    const container = new Container();
+    container.provideGlobal({
+      token: REQUEST_CONTEXT,
+      useValue: new ZentifyHttpContextService(
+        new AsyncLocalStorage<any>(),
+      ),
+    });
+
+    const server = new HttpServer(container, {
+      server: { port: 0, host: "127.0.0.1" },
+    });
     const port = await server.start();
     expect(port).toBeGreaterThan(0);
 

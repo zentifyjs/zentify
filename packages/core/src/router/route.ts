@@ -2,7 +2,7 @@ import { getControllerMetadata, getModuleMetadata, getRouteMetadata } from "../d
 import { getParameterMetadata } from "../decorators/metadata";
 import type { Container } from "../dependencies";
 import type { ControllerClass, ControllerHandler, FunctionHandler, HandlerFunction, HttpMethod, ModuleClass, ModuleMiddleware, Routes } from "../types";
-import { Middleware } from "../types/middleware";
+import { Middleware, MiddlewareHandler } from "../types/middleware";
 import { Logger } from "../utils";
 import { normalizePath } from "../utils/route";
 import { matchMiddlewarePath, matchRoute } from "./matcher";
@@ -16,11 +16,11 @@ import { pathToFileURL } from "node:url";
 export class Route {
   private static routes: Routes[] = [];
 
-  private static globalMiddleware: Middleware[] = [];
+  private static globalMiddleware: MiddlewareHandler[] = [];
 
   private static prefixStack: string[] = [];
 
-  private static groupMiddlewareStack: Middleware[][] = [];
+  private static groupMiddlewareStack: MiddlewareHandler[][] = [];
 
   private static moduleMiddlewareStack: ModuleMiddleware[][] = [];
 
@@ -111,11 +111,11 @@ export class Route {
     return this.prefixStack.join("");
   }
 
-  private static getGroupMiddlewares(): Middleware[] {
+  private static getGroupMiddlewares(): MiddlewareHandler[] {
     return this.groupMiddlewareStack.flat();
   }
 
-  public static resolveMiddlewares(route: Routes): Middleware[] {
+  public static resolveMiddlewares(route: Routes): MiddlewareHandler[] {
     return [...this.globalMiddleware, ...route.middlewares];
   }
 
@@ -175,7 +175,7 @@ export class Route {
 
   private static controller(
     controllerOrInstance: any,
-    middlewares: Middleware[] = [],
+    middlewares: MiddlewareHandler[] = [],
   ): void {
     const isInstance = typeof controllerOrInstance !== "function";
     const ControllerClass = isInstance ? controllerOrInstance.constructor : controllerOrInstance;
@@ -202,7 +202,7 @@ export class Route {
     method: HttpMethod,
     path: string,
     handler: HandlerFunction,
-    middlewares: Middleware[] = [],
+    middlewares: MiddlewareHandler[] = [],
     preBuiltInstance?: any
   ): void {
     const rawPath = this.getPrefix() + path;
@@ -291,7 +291,7 @@ export class Route {
   public static get<C extends ControllerClass<any>>(
     path: string,
     handler: ControllerHandler<C> | FunctionHandler,
-    middlewares: Middleware[] = [],
+    middlewares: MiddlewareHandler[] = [],
   ): void {
     this.addRoute("GET", path, handler as HandlerFunction, middlewares);
   }
@@ -299,7 +299,7 @@ export class Route {
   public static post<C extends ControllerClass<any>>(
     path: string,
     handler: ControllerHandler<C> | FunctionHandler,
-    middlewares: Middleware[] = [],
+    middlewares: MiddlewareHandler[] = [],
   ): void {
     this.addRoute("POST", path, handler as HandlerFunction, middlewares);
   }
@@ -307,7 +307,7 @@ export class Route {
   public static put<C extends ControllerClass<any>>(
     path: string,
     handler: ControllerHandler<C> | FunctionHandler,
-    middlewares: Middleware[] = [],
+    middlewares: MiddlewareHandler[] = [],
   ): void {
     this.addRoute("PUT", path, handler as HandlerFunction, middlewares);
   }
@@ -315,7 +315,7 @@ export class Route {
   public static delete<C extends ControllerClass<any>>(
     path: string,
     handler: ControllerHandler<C> | FunctionHandler,
-    middlewares: Middleware[] = [],
+    middlewares: MiddlewareHandler[] = [],
   ): void {
     this.addRoute("DELETE", path, handler as HandlerFunction, middlewares);
   }
@@ -323,7 +323,7 @@ export class Route {
   public static group(
     prefix: string,
     callback: () => void,
-    middlewares: Middleware[] = [],
+    middlewares: MiddlewareHandler[] = [],
   ): void {
     this.prefixStack.push(prefix);
     this.groupMiddlewareStack.push(middlewares);
@@ -336,7 +336,7 @@ export class Route {
     }
   }
 
-  public static use(middleware: Middleware): void {
+  public static use(middleware: MiddlewareHandler): void {
     this.globalMiddleware.push(middleware);
   }
 
