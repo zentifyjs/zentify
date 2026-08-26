@@ -2,6 +2,7 @@
   "name": "Database (TypeORM)",
   "description": "Adds TypeORM with entities, migrations and seeders",
   "kind": "layer",
+  "adapterPackage": "@zentify/typeorm",
   "deps": {
     "dependencies": {
       "@zentify/typeorm": "*",

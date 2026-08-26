@@ -38,7 +38,7 @@ app.addAdapter({
       username: config.dbUsername,
       password: config.dbPassword,
       database: config.dbName,
-      synchronize: true,
+      // synchronize: true,
       // entities: ["./Models/**/*.{ts,js}"],
       // migrations: ["./Database/Migrations/**/*.{ts,js}"]
     });

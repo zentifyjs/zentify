@@ -20,6 +20,7 @@ import { makeMigration } from "./commands/make-migration";
 import { makeSeeder } from "./commands/make-seeder";
 import { dbSeed } from "./commands/db-seed";
 import { migrateRun, migrateRevert, migrateFresh } from "./commands/migrate";
+import { registerInstallCommands } from "./commands/install";
 
 program.addCommand(makeApp);
 program.addCommand(makeController);
@@ -36,4 +37,7 @@ program.addCommand(devCommand);
 program.addCommand(buildCommand);
 program.addCommand(startCommand);
 
-program.parse();
+void (async () => {
+  await registerInstallCommands(program);
+  program.parse();
+})();

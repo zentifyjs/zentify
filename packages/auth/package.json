@@ -12,10 +12,11 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --format cjs,esm --clean && tsc --emitDeclarationOnly"
+    "build": "tsup src/index.ts --format cjs,esm --clean --shims && tsc --emitDeclarationOnly"
   },
   "files": [
-    "dist"
+    "dist",
+    "data"
   ],
   "dependencies": {
     "@zentify/core": "*",

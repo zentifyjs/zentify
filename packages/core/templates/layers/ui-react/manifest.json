@@ -2,6 +2,7 @@
   "name": "React + Vite",
   "description": "Adds a React + Vite frontend",
   "kind": "layer",
+  "adapterPackage": "@zentify/vite",
   "deps": {
     "dependencies": {
       "@zentify/react": "*",

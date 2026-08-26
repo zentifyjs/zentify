@@ -78,6 +78,13 @@ export interface ZentifyAdapter {
    * Called by RequestDispatcher.getArgs(); implement per argument type key.
    */
   getResolverArgs?(key: string): ZentifyArgumentResolver | undefined;
+
+  /**
+   * General-purpose hook called during CLI install.
+   * Adapter bebas lakukan apa saja: copy file, validasi, jalankan migration,
+   * buat directory, dll. Dipanggil SETELAH npm install (adapter package tersedia).
+   */
+  onInstall?(projectRoot: string): Promise<void> | void;
 }
 
 export interface ZentifyAdapterFactory {

@@ -7,6 +7,8 @@ export interface TemplateManifest {
   extends?: string;
   group?: string;
   priority?: number;
+  requires?: string[];
+  adapterPackage?: string;
   deps?: {
     dependencies?: Record<string, string>;
     devDependencies?: Record<string, string>;
@@ -43,4 +45,6 @@ export interface ResolvedTemplate {
   env: Record<string, string>;
   imports: string[];
   injections: TemplateInjection[];
+  adapterPackage?: string;
+  requires?: string[];
 }

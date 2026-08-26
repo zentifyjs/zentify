@@ -2,6 +2,8 @@
   "name": "Authentication (Session)",
   "description": "Session-based authentication with @zentify/auth (register/login/@AuthUser)",
   "kind": "layer",
+  "requires": ["database"],
+  "adapterPackage": "@zentify/auth",
   "deps": {
     "dependencies": {
       "@zentify/auth": "*"

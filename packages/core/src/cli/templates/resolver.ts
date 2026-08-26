@@ -73,6 +73,24 @@ async function resolveLayer(layerName: string, acc: ResolvedTemplate): Promise<v
 
   acc.sources.push({ dir, useFiles: true });
   await mergeInto(acc, manifest);
+
+  if (manifest.adapterPackage) {
+    acc.adapterPackage = manifest.adapterPackage;
+  }
+}
+
+export async function resolveLayerOnly(layerName: string): Promise<ResolvedTemplate> {
+  const acc: ResolvedTemplate = {
+    name: layerName,
+    sources: [],
+    dependencies: {},
+    devDependencies: {},
+    env: {},
+    imports: [],
+    injections: [],
+  };
+  await resolveLayer(layerName, acc);
+  return acc;
 }
 
 async function applyTemplateManifest(
@@ -139,6 +157,9 @@ async function mergeInto(acc: ResolvedTemplate, manifest: TemplateManifest) {
       if (!acc.imports.includes(line)) acc.imports.push(line);
     }
   }
+  if (manifest.requires) {
+    acc.requires = [...new Set([...(acc.requires ?? []), ...manifest.requires])];
+  }
   const code =
     manifest.bootstrap ??
     (manifest.bootstrapTpl ? await readBootstrapTpl(manifest.bootstrapTpl) : undefined);
@@ -169,13 +190,13 @@ async function copyDir(src: string, dest: string) {
   }
 }
 
-function prependImports(content: string, imports: string[]) {
+export function prependImports(content: string, imports: string[]) {
   const fresh = imports.filter((line) => !content.includes(line));
   if (fresh.length === 0) return content;
   return fresh.join("\n") + "\n" + content;
 }
 
-function injectAtMarker(content: string, marker: string, code: string) {
+export function injectAtMarker(content: string, marker: string, code: string) {
   if (content.includes(marker)) {
     return content.replace(marker, code.trimEnd());
   }
