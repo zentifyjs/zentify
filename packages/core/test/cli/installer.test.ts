@@ -24,6 +24,19 @@ const AUTH_INDEX = [
   "app.run();",
 ].join("\n");
 
+async function createAuthFixture() {
+  const tmpDir = await createFixture({ "@zentify/typeorm": "*" }, AUTH_INDEX);
+  await fs.mkdir(path.join(tmpDir, "app", "Models"), { recursive: true });
+  await fs.writeFile(path.join(tmpDir, "app", "Models", "User.ts"), "export class User {}");
+  await fs.mkdir(path.join(tmpDir, "app", "Config"), { recursive: true });
+  await fs.writeFile(path.join(tmpDir, "app", "Config", "AppConfig.ts"), "export class AppConfig {}");
+  await fs.mkdir(path.join(tmpDir, "app", "Database", "migrations"), { recursive: true });
+  await fs.writeFile(path.join(tmpDir, "app", "Database", "migrations", ".gitkeep"), "");
+  await fs.mkdir(path.join(tmpDir, "app", "Database", "seeders"), { recursive: true });
+  await fs.writeFile(path.join(tmpDir, "app", "Database", "seeders", "DatabaseSeeder.ts"), "export class DatabaseSeeder {}");
+  return tmpDir;
+}
+
 const FRESH_INDEX = [
   "import { Zentify } from '@zentify/core';",
   "const app = new Zentify();",
@@ -44,7 +57,7 @@ describe("installer", () => {
   });
 
   it("installLayer creates AuthController and AuthModule", async () => {
-    tmpDir = await createFixture({ "@zentify/typeorm": "*" }, AUTH_INDEX);
+    tmpDir = await createAuthFixture();
     const result = await installLayer("auth", tmpDir, { skipHooks: true });
     expect(result.filesCreated.length).toBeGreaterThan(0);
     expect(result.filesCreated.some((f) => f.includes("AuthController"))).toBe(true);
@@ -54,7 +67,7 @@ describe("installer", () => {
   });
 
   it("installLayer skips existing files", async () => {
-    tmpDir = await createFixture({ "@zentify/typeorm": "*" }, AUTH_INDEX);
+    tmpDir = await createAuthFixture();
     await fs.mkdir(path.join(tmpDir, "app", "Models"), { recursive: true });
     await fs.writeFile(
       path.join(tmpDir, "app", "Models", "User.ts"),
@@ -65,14 +78,14 @@ describe("installer", () => {
   });
 
   it("installLayer is idempotent", async () => {
-    tmpDir = await createFixture({ "@zentify/typeorm": "*" }, AUTH_INDEX);
+    tmpDir = await createAuthFixture();
     await installLayer("auth", tmpDir, { skipHooks: true });
     const result = await installLayer("auth", tmpDir, { skipHooks: true });
     expect(result.filesCreated).toHaveLength(0);
   });
 
   it("installLayer with force reinstalls even if already installed", async () => {
-    tmpDir = await createFixture({ "@zentify/typeorm": "*" }, AUTH_INDEX);
+    tmpDir = await createAuthFixture();
     await installLayer("auth", tmpDir, { skipHooks: true });
     const result = await installLayer("auth", tmpDir, { skipHooks: true, force: true });
     expect(result.filesCreated.length).toBeGreaterThan(0);
@@ -125,7 +138,7 @@ describe("installer", () => {
   });
 
   it("installLayer injects index.ts imports and bootstrap", async () => {
-    tmpDir = await createFixture({ "@zentify/typeorm": "*" }, AUTH_INDEX);
+    tmpDir = await createAuthFixture();
     await installLayer("auth", tmpDir, { skipHooks: true });
     const content = await fs.readFile(path.join(tmpDir, "app", "index.ts"), "utf-8");
     expect(content).toContain('import { ZentifyAuthAdapter } from "@zentify/auth"');
@@ -135,7 +148,7 @@ describe("installer", () => {
   });
 
   it("installLayer strips unused markers", async () => {
-    tmpDir = await createFixture({ "@zentify/typeorm": "*" }, AUTH_INDEX);
+    tmpDir = await createAuthFixture();
     await installLayer("auth", tmpDir, { skipHooks: true });
     const content = await fs.readFile(path.join(tmpDir, "app", "index.ts"), "utf-8");
     expect(content).not.toContain("// [[zentify:");

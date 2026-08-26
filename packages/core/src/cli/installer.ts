@@ -32,13 +32,36 @@ export async function isLayerInstalled(
   const hasDep = layerDepNames.some((dep) => dep in allDeps);
   if (!hasDep) return false;
 
-  const content = await readIndexTs(projectRoot);
-  if (!content) return false;
-
-  for (const injection of tpl.injections) {
-    if (content.includes(injection.marker)) return false;
+  for (const source of tpl.sources) {
+    const copyFrom = path.join(source.dir, "files");
+    try {
+      await fs.access(copyFrom);
+      const filesExist = await checkSourceFilesExist(copyFrom, projectRoot);
+      if (!filesExist) return false;
+    } catch {
+      continue;
+    }
   }
 
+  return true;
+}
+
+async function checkSourceFilesExist(src: string, dest: string): Promise<boolean> {
+  const entries = await fs.readdir(src, { withFileTypes: true });
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    if (entry.isDirectory()) {
+      const exists = await checkSourceFilesExist(srcPath, destPath);
+      if (!exists) return false;
+    } else {
+      try {
+        await fs.access(destPath);
+      } catch {
+        return false;
+      }
+    }
+  }
   return true;
 }
 
