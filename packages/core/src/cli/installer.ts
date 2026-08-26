@@ -261,6 +261,21 @@ async function injectIndex(
   const indexPath = path.join(projectRoot, "app", "index.ts");
   try {
     let content = await fs.readFile(indexPath, "utf-8");
+
+    const markerExists = tpl.injections.some((inj: any) =>
+      content.includes(inj.marker)
+    );
+
+    if (!markerExists) {
+      const hasBootstrap = tpl.imports.some((imp: string) =>
+        content.includes(imp)
+      );
+      if (hasBootstrap) {
+        new Logger({ context: "install" }).info("Bootstrap code sudah ada, skip.");
+        return;
+      }
+    }
+
     content = prependImports(content, tpl.imports);
 
     for (const injection of tpl.injections) {
